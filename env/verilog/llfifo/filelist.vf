@@ -1,0 +1,12 @@
+ll_bench.v
+../common/sd_seq_gen.v
+../common/sd_seq_check.v
+
+../../../rtl/verilog/utility/sd_llfifo.v
+../../../rtl/verilog/utility/sd_llfifo_ctl.v
++libext+.v
+
+-y ../../../rtl/verilog/buffers
+-y ../../../rtl/verilog/memory
+-y ../../../rtl/verilog/closure
+
