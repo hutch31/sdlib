@@ -1,0 +1,8 @@
+#!/bin/bash
+
+rm -f bench
+iverilog -o bench bench.v llstub.v llmanager.v \
+../../rtl/verilog/forks/sd_rrmux.v \
+../../rtl/verilog/forks/sd_mirror.v
+./bench
+
