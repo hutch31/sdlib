@@ -11,12 +11,12 @@ module llrdport
    input reset,
 
    // page request i/f
-   output reg        pgreq,
-   input             pgack,
+   output reg        par_srdy,
+   input             par_drdy,
 
-   input             lprq_srdy,
-   output reg        lprq_drdy,
-   input [lpsz-1:0]  lprq_page,
+   input             parr_srdy,
+   output reg        parr_drdy,
+   input [lpsz-1:0]  parr_page,
 
    // link to next page i/f
    output reg        lnp_srdy,
@@ -37,21 +37,27 @@ module llrdport
 
   task get_page;
     output [lpdsz-1:0] pagenum;
+    reg                ack;
     begin
+      ack = 0;
       @(posedge clk);
-      pgreq <= 1;
-      while (!pgack)
+      par_srdy <= 1;
+      while (!par_drdy)
         @(posedge clk);
-      pgreq <= 0;
+      par_srdy <= 0;
 
+      ack = 0;
+      while (!ack)
+        begin
+          @(posedge clk);
+          ack <= parr_srdy;
+          parr_drdy <= 1;
+          #1;
+        end
       @(posedge clk);
-      lprq_drdy <= 1;
-      if (lprq_srdy)
-        @(posedge clk);
-      else while (!lprq_srdy)
-        @(posedge clk);
-      pagenum = lprq_page;
-      lprq_drdy <= 0;
+
+      pagenum = parr_page;
+      parr_drdy <= 0;
     end
   endtask // get_page
 
@@ -84,8 +90,8 @@ module llrdport
 
   always
     begin : aloop
-      pgreq = 0;
-      lprq_drdy = 0;
+      par_srdy = 0;
+      parr_drdy = 0;
       lnp_srdy = 0;
       lnp_pnp  = 0;
       op_srdy = 0;

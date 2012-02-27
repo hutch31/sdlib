@@ -20,9 +20,9 @@ module llwrport
    input              rlp_drdy,
    output reg [lpsz-1:0] rlp_rd_page,
 
-   input              rlpd_srdy,
-   output reg         rlpd_drdy,
-   input [lpdsz-1:0]  rlpd_data,
+   input              rlpr_srdy,
+   output reg         rlpr_drdy,
+   input [lpdsz-1:0]  rlpr_data,
 
    // link page reclaim interface
    output reg            lprt_srdy,
@@ -38,6 +38,7 @@ module llwrport
   reg [lpdsz-1:0]         cur_page;
   integer                 wait_cyc;
   reg [lpdsz-1:0]         read_page;
+  integer                 pgcount;
 
   sd_fifo_s #(.width(lpsz), .depth(64)) opbuf
     (
@@ -56,6 +57,7 @@ module llwrport
   task read_link_data;
     input [lpsz-1:0] ipage;
     output [lpdsz-1:0] pdata;
+    reg                ack;
     begin
       @(posedge clk);
       rlp_srdy <= 1;
@@ -64,14 +66,25 @@ module llwrport
         @(posedge clk);
       rlp_srdy <= 0;
 
+      ack = 0;
+      while (!ack)
+        begin
+          @(posedge clk);
+          ack <= rlpr_srdy;
+          rlpr_drdy <= 1;
+          #1;
+        end
       @(posedge clk);
-      rlpd_drdy <= 1;
-      if (rlpd_srdy)
+/* -----\/----- EXCLUDED -----\/-----
+      @(posedge clk);
+      rlpr_drdy <= 1;
+      if (rlpr_srdy)
         @(posedge clk);
-      else while (!rlpd_srdy)
+      else while (!rlpr_srdy)
         @(posedge clk);
-      pdata = rlpd_data;
-      rlpd_drdy <= 0;
+ -----/\----- EXCLUDED -----/\----- */
+      pdata = rlpr_data;
+      rlpr_drdy <= 0;
     end
   endtask // read_link_data
 
@@ -90,6 +103,12 @@ module llwrport
   always
     begin : wrportloop
       p_drdy = 0;
+      rlp_srdy = 0;
+      rlp_rd_page = 0;
+      rlpr_drdy = 0;
+      lprt_srdy = 0;
+      lprt_page_list = 0;
+      pgcount = 0;
 
       @(posedge clk);
       if (reset) disable wrportloop;
@@ -99,13 +118,17 @@ module llwrport
       cur_page = p_data;
       p_drdy = 1;
       @(posedge clk);
+      p_drdy = 0;
 
       while (cur_page != stop_page)
         begin
           read_link_data (cur_page, read_page);
           return_page (cur_page);
           cur_page = read_page;
+          pgcount = pgcount + 1;
         end
+
+      $display ("%m: LLWRPORT: Read packet with %0d pages", pgcount);
 
       // wait 1-10 cycles
       wait_cyc = {$random} % 9 + 1;

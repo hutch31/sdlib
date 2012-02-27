@@ -1,11 +1,11 @@
 module llmanager
   (/*AUTOARG*/
   // Outputs
-  pgack, lprq_srdy, lprq_page, lnp_drdy, rlp_drdy, rlpd_srdy,
-  rlpd_data, lprt_drdy, free_count,
+  par_drdy, parr_srdy, parr_page, lnp_drdy, rlp_drdy, rlpr_srdy,
+  rlpr_data, lprt_drdy, free_count,
   // Inputs
-  clk, reset, pgreq, lprq_drdy, lnp_srdy, lnp_pnp, rlp_srdy,
-  rlp_rd_page, rlpd_drdy, lprt_srdy, lprt_page_list
+  clk, reset, par_srdy, parr_drdy, lnp_srdy, lnp_pnp, rlp_srdy,
+  rlp_rd_page, rlpr_drdy, lprt_srdy, lprt_page_list
   );
 
   parameter lpsz = 8;    // link list page size, in bits
@@ -19,14 +19,14 @@ module llmanager
   input clk;
   input reset;
 
-  // page request i/f
-  input [sources-1:0] pgreq;
-  output [sources-1:0] pgack;
+  // page allocation request i/f
+  input [sources-1:0] par_srdy;
+  output [sources-1:0] par_drdy;
 
-  // link page request return
-  output [sources-1:0] lprq_srdy;
-  input [sources-1:0] lprq_drdy;
-  output [lpsz-1:0]   lprq_page;
+  // page allocation request reply i/f
+  output [sources-1:0] parr_srdy;
+  input [sources-1:0] parr_drdy;
+  output [lpsz-1:0]   parr_page;
 
   // link to next page i/f
   input [sources-1:0]  lnp_srdy;
@@ -38,9 +38,10 @@ module llmanager
   output [sinks-1:0]     rlp_drdy;
   input [sinks*lpsz-1:0] rlp_rd_page;
 
-  output [sinks-1:0]     rlpd_srdy;
-  input [sinks-1:0]      rlpd_drdy;
-  output [lpdsz-1:0]     rlpd_data;
+  // read link page reply i/f
+  output [sinks-1:0]     rlpr_srdy;
+  input [sinks-1:0]      rlpr_drdy;
+  output [lpdsz-1:0]     rlpr_data;
 
   // link page reclaim interface
   input [sinks-1:0]   lprt_srdy;
@@ -57,7 +58,8 @@ module llmanager
 
   reg                  pmstate;
   integer              i;
-  wire [sources-1:0]   grant;
+  wire [sources-1:0]   req_src_id;
+  reg [sources-1:0]    iparr_src_id;
   wire                 req_srdy;
 
   wire reclaim_srdy;
@@ -70,48 +72,50 @@ module llmanager
   reg [lpsz-1:0]  pgmem_rd_addr;
   reg             pgmem_rd_en;
   wire [lpdsz-1:0] pgmem_rd_data;
-  reg             prev_pgmem_rd;
   reg             init;
   reg [lpsz:0]    init_count;
   reg [lpsz:0]    free_count;
   wire            free_empty;
-  wire            req_drdy;
+  reg             req_drdy;
 
   wire            irlp_srdy;
-  wire            irlp_drdy;
+  reg             irlp_drdy;
   wire [lpsz-1:0] irlp_rd_page;
   wire [sinks-1:0] irlp_grant;
 
-  reg             irlpd_srdy;
-  wire            irlpd_drdy;
-  reg [sinks-1:0] irlpd_grant, nxt_irlpd_grant;
-
-  assign free_empty = (free_head_ptr == free_tail_ptr);
-  assign free_head_ptr = (prev_pgmem_rd) ? pgmem_rd_data : r_free_head_ptr;
-
-  sd_rrmux #(.mode(0), .fast_arb(1), 
-             .width(1), .inputs(sources)) req_mux
-    (
-     .clk         (clk),
-     .reset       (reset),
-
-     .c_srdy      (pgreq),
-     .c_drdy      (pgack),
-     .c_data      ({sources{1'b0}}),
-     .c_rearb     (1'b1),
-
-     .p_srdy      (req_srdy),
-     .p_drdy      (req_drdy),
-     .p_data      (),
-     .p_grant     (grant)
-     );
+  reg             irlpr_srdy;
+  wire            irlpr_drdy;
+  reg [sinks-1:0] irlpr_grant, nxt_irlpr_grant;
+  reg              load_head_ptr, nxt_load_head_ptr;
+  reg              load_lp_data, nxt_load_lp_data;
 
   wire            ilnp_srdy;
   reg             ilnp_drdy;
   wire [lpsz-1:0] ilnp_page;
   wire [lpdsz-1:0] ilnp_nxt_page;
 
-  sd_rrmux #(.mode(0), .fast_arb(1), 
+
+  assign free_empty = (free_head_ptr == free_tail_ptr);
+  assign free_head_ptr = (load_head_ptr) ? pgmem_rd_data : r_free_head_ptr;
+
+  sd_rrmux #(.mode(1), .fast_arb(1), 
+             .width(1), .inputs(sources)) req_mux
+    (
+     .clk         (clk),
+     .reset       (reset),
+
+     .c_srdy      (par_srdy),
+     .c_drdy      (par_drdy),
+     .c_data      ({sources{1'b0}}),
+     .c_rearb     (1'b1),
+
+     .p_srdy      (req_srdy),
+     .p_drdy      (req_drdy),
+     .p_data      (),
+     .p_grant     (req_src_id)
+     );
+
+  sd_rrmux #(.mode(1), .fast_arb(1), 
              .width(lpsz+lpdsz), .inputs(sources)) lnp_mux
     (
      .clk         (clk),
@@ -128,7 +132,7 @@ module llmanager
      .p_grant     ()
      );
 
-  sd_rrmux #(.mode(0), .fast_arb(1), 
+  sd_rrmux #(.mode(1), .fast_arb(1), 
              .width(lpsz), .inputs(sources)) rlp_mux
     (
      .clk         (clk),
@@ -161,9 +165,6 @@ module llmanager
      .d_out          (pgmem_rd_data)
      );
 
-  reg              load_head_ptr, nxt_load_head_ptr;
-  reg              load_lp_data, nxt_load_lp_data;
-
   always @(posedge clk)
     begin
       if (reset)
@@ -172,17 +173,17 @@ module llmanager
           init_count <= 0;
           r_free_head_ptr <= 0;
           free_tail_ptr <= pages - 1;
-          prev_pgmem_rd <= 0;
           free_count <= pages;
           load_head_ptr <= 0;
           load_lp_data <= 0;
-          irlpd_grant <= 0;
+          irlpr_grant <= 0;
+          iparr_src_id <= 0;
         end
       else
         begin
           load_head_ptr <= nxt_load_head_ptr;
           load_lp_data  <= nxt_load_lp_data;
-          irlpd_grant <= nxt_irlpd_grant;
+          irlpr_grant <= nxt_irlpr_grant;
 
           if (init)
             begin
@@ -194,7 +195,10 @@ module llmanager
           else
             begin
               if (load_head_ptr)
-                r_free_head_ptr <= pgmem_rd_data;
+                  r_free_head_ptr <= pgmem_rd_data;
+
+              if (req_drdy)
+                iparr_src_id    <= req_src_id;
 
               if (reclaim_srdy & reclaim_drdy)
                 free_tail_ptr <= reclaim_page;
@@ -207,7 +211,7 @@ module llmanager
         end // else: !if(reset)
     end // always @ (posedge clk)
 
-  assign req_drdy = lpd_drdy & !free_empty;
+  //assign req_drdy = lpd_drdy & !free_empty & !init;
 
   always @*
     begin
@@ -220,7 +224,9 @@ module llmanager
       reclaim_drdy = 0;
       nxt_load_head_ptr = 0;
       nxt_load_lp_data = 0;
-      nxt_irlpd_grant = irlpd_grant;
+      nxt_irlpr_grant = irlpr_grant;
+      irlp_drdy = 0;
+      req_drdy = 0;
 
       if (init)
         begin
@@ -230,18 +236,20 @@ module llmanager
         end
       else
         begin
-          if (req_drdy & (grant != 0))
+          if (req_srdy & iparr_drdy & !free_empty)
             begin
               pgmem_rd_en = 1;
               pgmem_rd_addr = free_head_ptr;
               nxt_load_head_ptr = 1;
+              req_drdy = 1;
             end
-          else if (irlp_srdy & irlpd_drdy)
+          else if (irlp_srdy & irlpr_drdy)
             begin
               pgmem_rd_en = 1;
               pgmem_rd_addr = irlp_rd_page;
               nxt_load_lp_data = 1;
-              nxt_irlpd_grant = irlp_grant;
+              nxt_irlpr_grant = irlp_grant;
+              irlp_drdy = 1;
             end
 
           if (ilnp_srdy)
@@ -261,18 +269,33 @@ module llmanager
         end
     end
 
+  wire dsbuf_srdy, dsbuf_drdy;
+  wire [sources-1:0] dsbuf_source;
+  wire [lpsz-1:0]    dsbuf_data;
+  //reg                iparr_srdy;
+  wire               iparr_drdy;
+
+  sd_input #(.width(lpsz+sources)) lp_disp_buf
+    (.clk (clk), .reset (reset),
+     .c_srdy (load_head_ptr),
+     .c_drdy (iparr_drdy),
+     .c_data ({req_src_id,free_head_ptr}),
+     .ip_srdy (dsbuf_srdy),
+     .ip_drdy (dsbuf_drdy),
+     .ip_data ({dsbuf_source,dsbuf_data}));
+
   sd_mirror #(.mirror(sources), .width(lpsz)) lp_dispatch
     (.clk   (clk),
      .reset (reset),
      
-     .c_srdy (req_srdy),
-     .c_drdy (lpd_drdy),
-     .c_data (free_head_ptr),
-     .c_dst_vld (grant),
+     .c_srdy (dsbuf_srdy),
+     .c_drdy (dsbuf_drdy),
+     .c_data (dsbuf_data),
+     .c_dst_vld (dsbuf_source),
 
-     .p_srdy (lprq_srdy),
-     .p_drdy (lprq_drdy),
-     .p_data (lprq_page)
+     .p_srdy (parr_srdy),
+     .p_drdy (parr_drdy),
+     .p_data (parr_page)
      );
 
   // output reflector for read link page interface
@@ -280,17 +303,17 @@ module llmanager
     (.clk   (clk),
      .reset (reset),
      
-     .c_srdy (irlpd_srdy),
-     .c_drdy (irlpd_drdy),
+     .c_srdy (load_lp_data),
+     .c_drdy (irlpr_drdy),
      .c_data (pgmem_rd_data),
-     .c_dst_vld (irlpd_grant),
+     .c_dst_vld (irlpr_grant),
 
-     .p_srdy (rlpd_srdy),
-     .p_drdy (rlpd_drdy),
-     .p_data (rlpd_data)
+     .p_srdy (rlpr_srdy),
+     .p_drdy (rlpr_drdy),
+     .p_data (rlpr_data)
      );
 
-  sd_rrmux #(.mode(0), .fast_arb(1), 
+  sd_rrmux #(.mode(1), .fast_arb(1), 
              .width(lpsz), .inputs(sinks)) reclaim_mux
     (
      .clk         (clk),
