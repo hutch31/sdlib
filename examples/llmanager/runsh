@@ -1,10 +1,12 @@
 #!/bin/bash
 
 rm -f bench
-iverilog -o bench bench.v llstub.v llmanager.v \
+iverilog -o bench -Y .v bench.v llrdport.v llwrport.v \
+llmanager.v \
 ../../rtl/verilog/forks/sd_rrmux.v \
 ../../rtl/verilog/forks/sd_mirror.v \
 ../../rtl/verilog/closure/sd_output.v \
+-y ../../rtl/verilog/buffers \
 ../../rtl/verilog/memory/behave2p_mem.v
 ./bench
 
