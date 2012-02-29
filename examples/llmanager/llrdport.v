@@ -2,6 +2,8 @@
  * Stub simulating a read port device communicating
  * with the link list manager
  */
+`define PCOUNT 10
+
 module llrdport
   #(parameter lpsz=8,
     parameter lpdsz=lpsz+1,
@@ -29,11 +31,15 @@ module llrdport
    output reg [lpsz-1:0] op_page
    );
 
-  reg [lpdsz-1:0]          p1, p2;
+  reg [lpdsz-1:0]          p1, p2, p3;
   integer                  wait_cyc;
 
   localparam stop_page = { 1'b1, {lpdsz-1{1'b0}} };
-  
+
+  wire [lpdsz-1:0]         stop;
+  integer                  packets;
+
+  assign stop = stop_page;
 
   task get_page;
     output [lpdsz-1:0] pagenum;
@@ -42,6 +48,7 @@ module llrdport
       ack = 0;
       @(posedge clk);
       par_srdy <= 1;
+      @(posedge clk);
       while (!par_drdy)
         @(posedge clk);
       par_srdy <= 0;
@@ -58,19 +65,21 @@ module llrdport
 
       pagenum = parr_page;
       parr_drdy <= 0;
+      $display ("%t: %m: Received page %0d", $time, pagenum);
+      bench.print_free_list;
     end
   endtask // get_page
 
   task link_page;
     input [lpsz-1:0] page1;
     input [lpdsz-1:0] page2;
+    reg               ack;
     begin
       @(posedge clk);
       lnp_srdy <= 1;
       lnp_pnp <= { page1, page2 };
-      if (lnp_drdy)
-        @(posedge clk);
-      else while (!lnp_drdy)
+      @(posedge clk);
+      while (!lnp_drdy)
         @(posedge clk);
       lnp_srdy <= 0;
     end
@@ -82,11 +91,14 @@ module llrdport
       @(posedge clk);
       op_srdy <= 1;
       op_page <= pnum;
-      if (op_drdy) @(posedge clk);
-      else while (!op_drdy) @(posedge clk);
+      //if (op_drdy) @(posedge clk);
+      @(posedge clk);
+      while (!op_drdy) @(posedge clk);
       op_srdy <= 0;
     end
   endtask
+
+  initial packets = 0;
 
   always
     begin : aloop
@@ -98,7 +110,8 @@ module llrdport
       op_page = 0;
       
       @(posedge clk);
-      if (reset) disable aloop;
+      if (reset || (packets > `PCOUNT)) disable aloop;
+      $display ("%t: %m: Sourcing packet %0d", $time, packets);
 
       // request first page and store it
       get_page (p1);
@@ -106,7 +119,11 @@ module llrdport
 
       // link page 1 to page 2
       link_page (p1, p2);
-      link_page (p2, stop_page);
+
+      // get third page, link 2 to 3 and stop
+      get_page (p3);
+      link_page (p2, p3);
+      link_page (p3, stop_page);
 
       // send head page to output port
       send_out (p1);
@@ -114,6 +131,8 @@ module llrdport
       // wait 1-10 cycles
       wait_cyc = {$random} % 9 + 1;
       repeat (wait_cyc) @(posedge clk);
+
+      packets = packets + 1;
     end // block: aloop
 
 

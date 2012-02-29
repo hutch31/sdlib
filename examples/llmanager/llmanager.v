@@ -94,11 +94,16 @@ module llmanager
   wire [lpsz-1:0] ilnp_page;
   wire [lpdsz-1:0] ilnp_nxt_page;
 
+  wire dsbuf_srdy, dsbuf_drdy;
+  wire [sources-1:0] dsbuf_source;
+  wire [lpsz-1:0]    dsbuf_data;
+  //reg                iparr_srdy;
+  wire               iparr_drdy;
 
   assign free_empty = (free_head_ptr == free_tail_ptr);
   assign free_head_ptr = (load_head_ptr) ? pgmem_rd_data : r_free_head_ptr;
 
-  sd_rrmux #(.mode(1), .fast_arb(1), 
+  sd_rrmux #(.mode(0), .fast_arb(1), 
              .width(1), .inputs(sources)) req_mux
     (
      .clk         (clk),
@@ -115,7 +120,7 @@ module llmanager
      .p_grant     (req_src_id)
      );
 
-  sd_rrmux #(.mode(1), .fast_arb(1), 
+  sd_rrmux #(.mode(0), .fast_arb(1), 
              .width(lpsz+lpdsz), .inputs(sources)) lnp_mux
     (
      .clk         (clk),
@@ -132,7 +137,7 @@ module llmanager
      .p_grant     ()
      );
 
-  sd_rrmux #(.mode(1), .fast_arb(1), 
+  sd_rrmux #(.mode(0), .fast_arb(1), 
              .width(lpsz), .inputs(sources)) rlp_mux
     (
      .clk         (clk),
@@ -187,15 +192,14 @@ module llmanager
 
           if (init)
             begin
-              if (init_count < pages)
-                init_count <= init_count + 1;
-              else
+              init_count <= init_count + 1;
+              if (init_count == (pages-1))
                 init <= 0;
             end
           else
             begin
               if (load_head_ptr)
-                  r_free_head_ptr <= pgmem_rd_data;
+                r_free_head_ptr <= pgmem_rd_data;
 
               if (req_drdy)
                 iparr_src_id    <= req_src_id;
@@ -232,18 +236,12 @@ module llmanager
         begin
           pgmem_wr_en = 1;
           pgmem_wr_addr = init_count;
-          pgmem_wr_data = init_count + 1;
+          pgmem_wr_data[lpsz-1:0] = init_count + 1;
+          pgmem_wr_data[lpdsz-1:lpsz] = 0;
         end
       else
         begin
-          if (req_srdy & iparr_drdy & !free_empty)
-            begin
-              pgmem_rd_en = 1;
-              pgmem_rd_addr = free_head_ptr;
-              nxt_load_head_ptr = 1;
-              req_drdy = 1;
-            end
-          else if (irlp_srdy & irlpr_drdy)
+          if (irlp_srdy & irlpr_drdy & !load_lp_data)
             begin
               pgmem_rd_en = 1;
               pgmem_rd_addr = irlp_rd_page;
@@ -251,35 +249,36 @@ module llmanager
               nxt_irlpr_grant = irlp_grant;
               irlp_drdy = 1;
             end
-
-          if (ilnp_srdy)
+          else if (req_srdy & (iparr_drdy & dsbuf_drdy) & !free_empty)
             begin
-              ilnp_drdy = 1;
-              pgmem_wr_en = 1;
-              pgmem_wr_addr = ilnp_page;
-              pgmem_wr_data = ilnp_nxt_page;
-           end
-          else if (reclaim_srdy)
+              pgmem_rd_en = 1;
+              pgmem_rd_addr = free_head_ptr;
+              nxt_load_head_ptr = 1;
+              req_drdy = 1;
+            end
+
+          if (reclaim_srdy)
             begin
               reclaim_drdy = 1;
               pgmem_wr_en = 1;
               pgmem_wr_addr = free_tail_ptr;
               pgmem_wr_data = reclaim_page;
             end
-        end
+          else if (ilnp_srdy)
+            begin
+              ilnp_drdy = 1;
+              pgmem_wr_en = 1;
+              pgmem_wr_addr = ilnp_page;
+              pgmem_wr_data = ilnp_nxt_page;
+           end
+       end
     end
-
-  wire dsbuf_srdy, dsbuf_drdy;
-  wire [sources-1:0] dsbuf_source;
-  wire [lpsz-1:0]    dsbuf_data;
-  //reg                iparr_srdy;
-  wire               iparr_drdy;
 
   sd_input #(.width(lpsz+sources)) lp_disp_buf
     (.clk (clk), .reset (reset),
      .c_srdy (load_head_ptr),
      .c_drdy (iparr_drdy),
-     .c_data ({req_src_id,free_head_ptr}),
+     .c_data ({iparr_src_id,r_free_head_ptr}),
      .ip_srdy (dsbuf_srdy),
      .ip_drdy (dsbuf_drdy),
      .ip_data ({dsbuf_source,dsbuf_data}));
@@ -313,7 +312,7 @@ module llmanager
      .p_data (rlpr_data)
      );
 
-  sd_rrmux #(.mode(1), .fast_arb(1), 
+  sd_rrmux #(.mode(0), .fast_arb(1), 
              .width(lpsz), .inputs(sinks)) reclaim_mux
     (
      .clk         (clk),

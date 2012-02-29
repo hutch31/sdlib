@@ -10,6 +10,13 @@
 //          demultiplexer.  Output flow control will cause the
 //          component to stall, so that inputs do not miss their
 //          turn due to flow control.
+// Mode 0 fast arb : Each input gets a single grant. If the
+//          output is not ready (p_drdy deasserted), then the
+//          machine will hold on that particular input until it
+//          receives a grant.  Once a single token has been
+//          accepted the machine will round-robin arbitrate.
+//          When there are no requests the machine returns to
+//          its default state.
 // Mode 1 : Each input can transmit for as long as it has data.
 //          When input deasserts, device will begin to hunt for a
 //          new input with data.
@@ -147,7 +154,9 @@ module sd_rrmux
     begin
       if ((mode ==  1) & (c_srdy & rr_state))
         nxt_rr_state = rr_state;
-      else if ((mode == 0) & !p_drdy)
+      else if ((mode == 0) && !p_drdy && !fast_arb)
+        nxt_rr_state = rr_state;
+      else if ((mode == 0) && |(rr_state & c_srdy) && !p_drdy && fast_arb)
         nxt_rr_state = rr_state;
       else if ((mode == 2) & (rr_locked | (c_srdy & rr_state)))
         nxt_rr_state = rr_state;
@@ -160,7 +169,7 @@ module sd_rrmux
   always @(`SDLIB_CLOCKING)
     begin
       if (reset)
-        rr_state <= `SDLIB_DELAY 1;
+        rr_state <= `SDLIB_DELAY (fast_arb)? 0 : 1;
       else
         rr_state <= `SDLIB_DELAY nxt_rr_state;
     end

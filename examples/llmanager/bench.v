@@ -49,6 +49,7 @@ module bench;
 
   initial
     begin
+      $timeformat(-9, 0, " ns", 5);
       $dumpfile ("bench.vcd");
       $dumpvars;
       clk = 0;
@@ -341,7 +342,24 @@ module bench;
           instant_walk_free = free_count;
         end
     end
-  endfunction
+  endfunction // if
+
+  task print_free_list;
+    integer head, tail;
+    begin
+      head = lm.free_head_ptr;
+      tail = lm.free_tail_ptr;
+ 
+      $write ("%t: Free list=%0d", $time, head);
+      while (head != tail)
+        begin
+          head = lm.pglist_mem.array[head];
+          $write ("->%0d", head);
+        end
+      $display ("");
+    end
+  endtask
+      
 
   task walk_free_list;
     integer free_count;

@@ -39,6 +39,7 @@ module llwrport
   integer                 wait_cyc;
   reg [lpdsz-1:0]         read_page;
   integer                 pgcount;
+  integer                 packets;
 
   sd_fifo_s #(.width(lpsz), .depth(64)) opbuf
     (
@@ -62,6 +63,7 @@ module llwrport
       @(posedge clk);
       rlp_srdy <= 1;
       rlp_rd_page <= ipage;
+      @(posedge clk);
       while (!rlp_drdy)
         @(posedge clk);
       rlp_srdy <= 0;
@@ -70,20 +72,13 @@ module llwrport
       while (!ack)
         begin
           @(posedge clk);
-          ack <= rlpr_srdy;
+          ack = rlpr_srdy;
+          pdata = rlpr_data;
           rlpr_drdy <= 1;
-          #1;
         end
       @(posedge clk);
-/* -----\/----- EXCLUDED -----\/-----
-      @(posedge clk);
-      rlpr_drdy <= 1;
-      if (rlpr_srdy)
-        @(posedge clk);
-      else while (!rlpr_srdy)
-        @(posedge clk);
- -----/\----- EXCLUDED -----/\----- */
-      pdata = rlpr_data;
+          
+      //pdata = rlpr_data;
       rlpr_drdy <= 0;
     end
   endtask // read_link_data
@@ -91,14 +86,19 @@ module llwrport
   task return_page;
     input [lpsz-1:0] pnum;
     begin
-     @(posedge clk);
+      @(posedge clk);
       lprt_srdy <= 1;
       lprt_page_list <= pnum;
+      @(posedge clk);
       while (!lprt_drdy)
         @(posedge clk);
       lprt_srdy <= 0;
+      $display ("%t: %m: Returned page %0d", $time, pnum);
+      bench.print_free_list;
     end
   endtask
+
+  initial packets = 0;
 
   always
     begin : wrportloop
@@ -128,7 +128,8 @@ module llwrport
           pgcount = pgcount + 1;
         end
 
-      $display ("%m: LLWRPORT: Read packet with %0d pages", pgcount);
+      $display ("%t: %m: LLWRPORT: Read packet %0d with %0d pages", $time, packets, pgcount);
+      packets = packets + 1;
 
       // wait 1-10 cycles
       wait_cyc = {$random} % 9 + 1;
