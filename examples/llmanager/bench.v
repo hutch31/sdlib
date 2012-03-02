@@ -39,6 +39,12 @@ module bench;
   wire [3:0]            parr_drdy;              // From rport0 of llrdport.v, ...
   wire [(lpsz)-1:0]     parr_page;              // From lm of llmanager.v
   wire [(sources)-1:0]  parr_srdy;              // From lm of llmanager.v
+  wire [(lpsz)-1:0]     pgmem_rd_addr;          // From lm of llmanager.v
+  wire [(lpdsz)-1:0]    pgmem_rd_data;          // From pglist_mem of behave2p_mem.v
+  wire                  pgmem_rd_en;            // From lm of llmanager.v
+  wire [(lpsz)-1:0]     pgmem_wr_addr;          // From lm of llmanager.v
+  wire [(lpdsz)-1:0]    pgmem_wr_data;          // From lm of llmanager.v
+  wire                  pgmem_wr_en;            // From lm of llmanager.v
   wire [(sinks)-1:0]    rlp_drdy;               // From lm of llmanager.v
   wire [15:0]           rlp_rd_page;            // From wport0 of llwrport.v, ...
   wire [3:0]            rlp_srdy;               // From wport0 of llwrport.v, ...
@@ -66,6 +72,35 @@ module bench;
   always @(negedge clk)
     bfree = instant_walk_free(reset);
 
+/* behave2p_mem AUTO_TEMPLATE
+ (
+
+     .wr_clk         (clk),
+     .rd_clk         (clk),
+
+     .wr_en          (pgmem_wr_en),
+     .d_in           (pgmem_wr_data[]),
+     .wr_addr        (pgmem_wr_addr[]),
+
+     .rd_en          (pgmem_rd_en),
+     .rd_addr        (pgmem_rd_addr[]),
+     .d_out          (pgmem_rd_data[]),
+ ); 
+ */
+  behave2p_mem #(.depth   (pages), 
+                 .addr_sz (lpsz),
+                 .width   (lpdsz)) pglist_mem
+    (/*AUTOINST*/
+     // Outputs
+     .d_out                             (pgmem_rd_data[(lpdsz)-1:0]), // Templated
+     // Inputs
+     .wr_en                             (pgmem_wr_en),           // Templated
+     .rd_en                             (pgmem_rd_en),           // Templated
+     .wr_clk                            (clk),                   // Templated
+     .rd_clk                            (clk),                   // Templated
+     .d_in                              (pgmem_wr_data[(lpdsz)-1:0]), // Templated
+     .rd_addr                           (pgmem_rd_addr[(lpsz)-1:0]), // Templated
+     .wr_addr                           (pgmem_wr_addr[(lpsz)-1:0])); // Templated
 /* llmanager AUTO_TEMPLATE
  (
      .lnp_pnp                           (lnp_pnp[35:0]),
@@ -89,6 +124,11 @@ module bench;
      .rlpr_srdy                         (rlpr_srdy[(sinks)-1:0]),
      .rlpr_data                         (rlpr_data[(lpdsz)-1:0]),
      .lprt_drdy                         (lprt_drdy[(sinks)-1:0]),
+     .pgmem_wr_en                       (pgmem_wr_en),
+     .pgmem_wr_addr                     (pgmem_wr_addr[(lpsz)-1:0]),
+     .pgmem_wr_data                     (pgmem_wr_data[(lpdsz)-1:0]),
+     .pgmem_rd_addr                     (pgmem_rd_addr[(lpsz)-1:0]),
+     .pgmem_rd_en                       (pgmem_rd_en),
      .free_count                        (free_count[(lpsz):0]),
      // Inputs
      .clk                               (clk),
@@ -101,7 +141,8 @@ module bench;
      .rlp_rd_page                       (rlp_rd_page[(sinks)*(lpsz)-1:0]),
      .rlpr_drdy                         (rlpr_drdy[(sinks)-1:0]),
      .lprt_srdy                         (lprt_srdy[(sinks)-1:0]),
-     .lprt_page_list                    (lprt_page_list[(sinks)*(lpsz)-1:0]));
+     .lprt_page_list                    (lprt_page_list[(sinks)*(lpsz)-1:0]),
+     .pgmem_rd_data                     (pgmem_rd_data[(lpdsz)-1:0]));
 
 /* llrdport AUTO_TEMPLATE
  (
@@ -337,7 +378,7 @@ module bench;
           while ((head != tail) && (free_count <= pages))
             begin
               free_count = free_count + 1;
-              head = lm.pglist_mem.array[head];
+              head = pglist_mem.array[head];
             end // while (head != tail)
           instant_walk_free = free_count;
         end
@@ -353,7 +394,7 @@ module bench;
       $write ("%t: Free list=%0d", $time, head);
       while (head != tail)
         begin
-          head = lm.pglist_mem.array[head];
+          head = pglist_mem.array[head];
           $write ("->%0d", head);
         end
       $display ("");
@@ -375,7 +416,7 @@ module bench;
       while (head != tail)
         begin
           free_count = free_count + 1;
-          head = lm.pglist_mem.array[head];
+          head = pglist_mem.array[head];
           if (plist[head] !== 0)
             $display ("Duplicate page #%d", head);
           else
@@ -389,3 +430,6 @@ module bench;
   endtask
 
 endmodule // bench
+// Local Variables:
+// verilog-library-directories:("." "../../rtl/verilog/memory")
+// End:

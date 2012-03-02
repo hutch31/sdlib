@@ -1,11 +1,21 @@
+//----------------------------------------------------------------------
+//  Linked List Manager
+//
+//----------------------------------------------------------------------
+//  Author: Guy Hutchison
+//
+// This block is uncopyrighted and released into the public domain.
+//----------------------------------------------------------------------
+
 module llmanager
   (/*AUTOARG*/
   // Outputs
   par_drdy, parr_srdy, parr_page, lnp_drdy, rlp_drdy, rlpr_srdy,
-  rlpr_data, lprt_drdy, free_count,
+  rlpr_data, lprt_drdy, pgmem_wr_en, pgmem_wr_addr, pgmem_wr_data,
+  pgmem_rd_addr, pgmem_rd_en, free_count,
   // Inputs
   clk, reset, par_srdy, parr_drdy, lnp_srdy, lnp_pnp, rlp_srdy,
-  rlp_rd_page, rlpr_drdy, lprt_srdy, lprt_page_list
+  rlp_rd_page, rlpr_drdy, lprt_srdy, lprt_page_list, pgmem_rd_data
   );
 
   parameter lpsz = 8;    // link list page size, in bits
@@ -48,10 +58,15 @@ module llmanager
   output [sinks-1:0]  lprt_drdy;
   input [sinks*lpsz-1:0] lprt_page_list;
 
+  // link memory interface
+  output                 pgmem_wr_en;
+  output [lpsz-1:0]      pgmem_wr_addr;
+  output [lpdsz-1:0]     pgmem_wr_data;
+  output [lpsz-1:0]      pgmem_rd_addr;
+  output                 pgmem_rd_en;
+  input [lpdsz-1:0]      pgmem_rd_data;
 
   output [lpsz:0]        free_count;
-
-  
 
   reg [lpsz-1:0]       r_free_head_ptr, free_tail_ptr;
   wire [lpsz-1:0]      free_head_ptr;
@@ -71,7 +86,6 @@ module llmanager
   reg [lpsz-1:0]  pgmem_wr_addr;
   reg [lpsz-1:0]  pgmem_rd_addr;
   reg             pgmem_rd_en;
-  wire [lpdsz-1:0] pgmem_rd_data;
   reg             init;
   reg [lpsz:0]    init_count;
   reg [lpsz:0]    free_count;
@@ -97,7 +111,6 @@ module llmanager
   wire dsbuf_srdy, dsbuf_drdy;
   wire [sources-1:0] dsbuf_source;
   wire [lpsz-1:0]    dsbuf_data;
-  //reg                iparr_srdy;
   wire               iparr_drdy;
 
   assign free_empty = (free_head_ptr == free_tail_ptr);
@@ -154,22 +167,6 @@ module llmanager
      .p_grant     (irlp_grant)
      );
 
-  behave2p_mem #(.depth   (pages), 
-                 .addr_sz (lpsz),
-                 .width   (lpdsz)) pglist_mem
-    (
-     .wr_clk         (clk),
-     .rd_clk         (clk),
-
-     .wr_en          (pgmem_wr_en),
-     .d_in           (pgmem_wr_data),
-     .wr_addr        (pgmem_wr_addr),
-
-     .rd_en          (pgmem_rd_en),
-     .rd_addr        (pgmem_rd_addr),
-     .d_out          (pgmem_rd_data)
-     );
-
   always @(posedge clk)
     begin
       if (reset)
@@ -215,8 +212,6 @@ module llmanager
         end // else: !if(reset)
     end // always @ (posedge clk)
 
-  //assign req_drdy = lpd_drdy & !free_empty & !init;
-
   always @*
     begin
       pgmem_wr_data = 0;
@@ -241,6 +236,8 @@ module llmanager
         end
       else
         begin
+          // load_lp check is to predict flow control on next cycle,
+          // prevents back-to-pack Read Link Page requests
           if (irlp_srdy & irlpr_drdy & !load_lp_data)
             begin
               pgmem_rd_en = 1;
