@@ -25,9 +25,9 @@ module llwrport
    input [lpdsz-1:0]  rlpr_data,
 
    // link page reclaim interface
-   output reg            lprt_srdy,
-   input                 lprt_drdy,
-   output reg [lpsz-1:0] lprt_page_list
+   output reg            drf_srdy,
+   input                 drf_drdy,
+   output reg [lpsz-1:0] drf_page_list
    );
 
   localparam stop_page = { 1'b1, {lpdsz-1{1'b0}} };
@@ -87,12 +87,12 @@ module llwrport
     input [lpsz-1:0] pnum;
     begin
       @(posedge clk);
-      lprt_srdy <= 1;
-      lprt_page_list <= pnum;
+      drf_srdy <= 1;
+      drf_page_list <= pnum;
       @(posedge clk);
-      while (!lprt_drdy)
+      while (!drf_drdy)
         @(posedge clk);
-      lprt_srdy <= 0;
+      drf_srdy <= 0;
       $display ("%t: %m: Returned page %0d", $time, pnum);
       bench.print_free_list;
     end
@@ -106,8 +106,8 @@ module llwrport
       rlp_srdy = 0;
       rlp_rd_page = 0;
       rlpr_drdy = 0;
-      lprt_srdy = 0;
-      lprt_page_list = 0;
+      drf_srdy = 0;
+      drf_page_list = 0;
       pgcount = 0;
 
       @(posedge clk);

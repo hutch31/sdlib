@@ -11,11 +11,13 @@ module llmanager
   (/*AUTOARG*/
   // Outputs
   par_drdy, parr_srdy, parr_page, lnp_drdy, rlp_drdy, rlpr_srdy,
-  rlpr_data, lprt_drdy, pgmem_wr_en, pgmem_wr_addr, pgmem_wr_data,
-  pgmem_rd_addr, pgmem_rd_en, free_count,
+  rlpr_data, drf_drdy, refup_drdy, pgmem_wr_en, pgmem_wr_addr,
+  pgmem_wr_data, pgmem_rd_addr, pgmem_rd_en, ref_wr_en, ref_wr_addr,
+  ref_wr_data, ref_rd_addr, ref_rd_en, free_count,
   // Inputs
   clk, reset, par_srdy, parr_drdy, lnp_srdy, lnp_pnp, rlp_srdy,
-  rlp_rd_page, rlpr_drdy, lprt_srdy, lprt_page_list, pgmem_rd_data
+  rlp_rd_page, rlpr_drdy, drf_srdy, drf_page_list, refup_srdy,
+  refup_page, refup_count, pgmem_rd_data, ref_rd_data
   );
 
   parameter lpsz = 8;    // link list page size, in bits
@@ -25,6 +27,8 @@ module llmanager
   parameter sources = 4; // number of sources
   parameter sinks = 4;    // number of sinks
   parameter sksz = 2;     // number of sink address bits
+  parameter maxref = 7;   // maximum reference count, disable with maxref = 0
+  parameter refsz  = 3;   // size of reference count bits
 
   input clk;
   input reset;
@@ -53,10 +57,16 @@ module llmanager
   input [sinks-1:0]      rlpr_drdy;
   output [lpdsz-1:0]     rlpr_data;
 
-  // link page reclaim interface
-  input [sinks-1:0]   lprt_srdy;
-  output [sinks-1:0]  lprt_drdy;
-  input [sinks*lpsz-1:0] lprt_page_list;
+  // page dereference interface
+  input [sinks-1:0]   drf_srdy;
+  output [sinks-1:0]  drf_drdy;
+  input [sinks*lpsz-1:0] drf_page_list;
+
+  // reference count update interface
+  input                  refup_srdy;
+  output                 refup_drdy;
+  input [lpsz-1:0]       refup_page;
+  input [refsz-1:0]      refup_count;
 
   // link memory interface
   output                 pgmem_wr_en;
@@ -65,6 +75,15 @@ module llmanager
   output [lpsz-1:0]      pgmem_rd_addr;
   output                 pgmem_rd_en;
   input [lpdsz-1:0]      pgmem_rd_data;
+
+  // reference count memory interface
+  output                 ref_wr_en;
+  output [lpsz-1:0]      ref_wr_addr;
+  output [refsz-1:0]     ref_wr_data;
+  output [lpsz-1:0]      ref_rd_addr;
+  output                 ref_rd_en;
+  input [refsz-1:0]      ref_rd_data;
+  
 
   output [lpsz:0]        free_count;
 
@@ -86,6 +105,7 @@ module llmanager
   reg [lpsz-1:0]  pgmem_wr_addr;
   reg [lpsz-1:0]  pgmem_rd_addr;
   reg             pgmem_rd_en;
+
   reg             init;
   reg [lpsz:0]    init_count;
   reg [lpsz:0]    free_count;
@@ -309,15 +329,17 @@ module llmanager
      .p_data (rlpr_data)
      );
 
+  generate if (maxref == 0)
+    begin : no_ref_count
   sd_rrmux #(.mode(0), .fast_arb(1), 
              .width(lpsz), .inputs(sinks)) reclaim_mux
     (
      .clk         (clk),
      .reset       (reset),
 
-     .c_srdy      (lprt_srdy),
-     .c_drdy      (lprt_drdy),
-     .c_data      (lprt_page_list),
+     .c_srdy      (drf_srdy),
+     .c_drdy      (drf_drdy),
+     .c_data      (drf_page_list),
      .c_rearb     (1'b1),
 
      .p_srdy      (reclaim_srdy),
@@ -325,5 +347,55 @@ module llmanager
      .p_data      (reclaim_page),
      .p_grant     ()
      );
+    end // block: no_ref_count
+  else
+    begin : enable_ref_count
+      wire drq_srdy, drq_drdy;
+      wire [lpsz-1:0] drq_page;
+
+      sd_rrmux #(.mode(0), .fast_arb(1), 
+                 .width(lpsz), .inputs(sinks)) reclaim_mux
+        (
+         .clk         (clk),
+         .reset       (reset),
+         
+         .c_srdy      (drf_srdy),
+         .c_drdy      (drf_drdy),
+         .c_data      (drf_page_list),
+         .c_rearb     (1'b1),
+
+         .p_srdy      (drq_srdy),
+         .p_drdy      (drq_drdy),
+         .p_data      (drq_page),
+         .p_grant     ()
+         );
+
+      llmanager_refcount #(/*AUTOINSTPARAM*/
+                           // Parameters
+                           .lpsz                (lpsz),
+                           .refsz               (refsz)) llref
+        (/*AUTOINST*/
+         // Outputs
+         .drq_drdy                      (drq_drdy),
+         .reclaim_srdy                  (reclaim_srdy),
+         .reclaim_page                  (reclaim_page[(lpsz)-1:0]),
+         .refup_drdy                    (refup_drdy),
+         .ref_wr_en                     (ref_wr_en),
+         .ref_wr_addr                   (ref_wr_addr[(lpsz)-1:0]),
+         .ref_wr_data                   (ref_wr_data[(refsz)-1:0]),
+         .ref_rd_addr                   (ref_rd_addr[(lpsz)-1:0]),
+         .ref_rd_en                     (ref_rd_en),
+         // Inputs
+         .clk                           (clk),
+         .reset                         (reset),
+         .drq_srdy                      (drq_srdy),
+         .drq_page                      (drq_page[(lpsz)-1:0]),
+         .reclaim_drdy                  (reclaim_drdy),
+         .refup_srdy                    (refup_srdy),
+         .refup_page                    (refup_page[(lpsz)-1:0]),
+         .refup_count                   (refup_count[(refsz)-1:0]),
+         .ref_rd_data                   (ref_rd_data[(refsz)-1:0]));
+    end
+  endgenerate
 
 endmodule // llmanager
