@@ -33,7 +33,7 @@ module llwrport
   localparam stop_page = { 1'b1, {lpdsz-1{1'b0}} };
 
   wire                    p_srdy;
-  wire [lpsz*2-1:0]         p_data;
+  wire [lpsz-1:0]         p_data;
   reg                     p_drdy;
   reg [lpdsz-1:0]         cur_page;
   integer                 wait_cyc;
@@ -117,8 +117,7 @@ module llwrport
 
       while (!p_srdy)
         @(posedge clk);
-      start_page = p_data[lpsz-1:0];
-      //{ start_page, end_page } = p_data;
+      start_page = p_data;
       p_drdy = 1;
       @(posedge clk);
       p_drdy = 0;

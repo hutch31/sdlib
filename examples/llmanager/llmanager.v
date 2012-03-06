@@ -240,7 +240,6 @@ module llmanager
       pgmem_rd_addr = 0;
       pgmem_rd_en = 0;
       ilnp_drdy = 0;
-      reclaim_drdy = 0;
       nxt_load_head_ptr = 0;
       nxt_load_lp_data = 0;
       nxt_irlpr_grant = irlpr_grant;
@@ -253,9 +252,11 @@ module llmanager
           pgmem_wr_addr = init_count;
           pgmem_wr_data[lpsz-1:0] = init_count + 1;
           pgmem_wr_data[lpdsz-1:lpsz] = 0;
+          reclaim_drdy = 0;
         end
       else
         begin
+          reclaim_drdy = 1;
           // load_lp check is to predict flow control on next cycle,
           // prevents back-to-pack Read Link Page requests
           if (irlp_srdy & irlpr_drdy & !load_lp_data)
@@ -276,7 +277,6 @@ module llmanager
 
           if (reclaim_srdy)
             begin
-              reclaim_drdy = 1;
               pgmem_wr_en = 1;
               pgmem_wr_addr = free_tail_ptr;
               pgmem_wr_data = reclaim_start_page;
@@ -351,10 +351,10 @@ module llmanager
   else
     begin : enable_ref_count
       wire drq_srdy, drq_drdy;
-      wire [lpsz-1:0] drq_page;
+      wire [lpsz-1:0] drq_start_page, drq_end_page;
 
       sd_rrmux #(.mode(0), .fast_arb(1), 
-                 .width(lpsz), .inputs(sinks)) reclaim_mux
+                 .width(lpsz*2), .inputs(sinks)) reclaim_mux
         (
          .clk         (clk),
          .reset       (reset),
@@ -366,7 +366,7 @@ module llmanager
 
          .p_srdy      (drq_srdy),
          .p_drdy      (drq_drdy),
-         .p_data      (drq_page),
+         .p_data      ({drq_start_page,drq_end_page}),
          .p_grant     ()
          );
 
@@ -378,7 +378,8 @@ module llmanager
          // Outputs
          .drq_drdy                      (drq_drdy),
          .reclaim_srdy                  (reclaim_srdy),
-         .reclaim_page                  (reclaim_page[(lpsz)-1:0]),
+         .reclaim_start_page            (reclaim_start_page[(lpsz)-1:0]),
+         .reclaim_end_page              (reclaim_end_page[(lpsz)-1:0]),
          .refup_drdy                    (refup_drdy),
          .ref_wr_en                     (ref_wr_en),
          .ref_wr_addr                   (ref_wr_addr[(lpsz)-1:0]),
@@ -389,7 +390,8 @@ module llmanager
          .clk                           (clk),
          .reset                         (reset),
          .drq_srdy                      (drq_srdy),
-         .drq_page                      (drq_page[(lpsz)-1:0]),
+         .drq_start_page                (drq_start_page[(lpsz)-1:0]),
+         .drq_end_page                  (drq_end_page[(lpsz)-1:0]),
          .reclaim_drdy                  (reclaim_drdy),
          .refup_srdy                    (refup_srdy),
          .refup_page                    (refup_page[(lpsz)-1:0]),

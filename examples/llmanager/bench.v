@@ -9,7 +9,7 @@ module bench;
   localparam lpdsz = 5;
   localparam pages = 16;
   localparam refsz = 3;
-  localparam maxref = 0;
+  localparam maxref = 4;
 
   reg   clk;
   reg   reset;
@@ -54,6 +54,7 @@ module bench;
    wire [(refsz)-1:0]   ref_wr_data;            // From lm of llmanager.v
    wire                 ref_wr_en;              // From lm of llmanager.v
    wire [(refsz)-1:0]   refup_count;            // From fibstub of fibstub.v
+   wire                 refup_drdy;             // From lm of llmanager.v
    wire [(lpsz)-1:0]    refup_page;             // From fibstub of fibstub.v
    wire                 refup_srdy;             // From fibstub of fibstub.v
    wire [(sinks)-1:0]   rlp_drdy;               // From lm of llmanager.v
@@ -147,11 +148,6 @@ module bench;
  (
      .lnp_pnp                           (lnp_pnp[35:0]),
  
-     .refup_drdy                        (),
-     .refup_srdy                        (1'b0),
-     .refup_page                        ({lpsz{1'b0}}),
-     .refup_count                       ({refsz{1'b0}}),
- 
      .drf_page_list                     (drf_page_list[sinks*lpsz*2-1:0]),
  );
  */
@@ -175,7 +171,7 @@ module bench;
      .rlpr_srdy                         (rlpr_srdy[(sinks)-1:0]),
      .rlpr_data                         (rlpr_data[(lpdsz)-1:0]),
      .drf_drdy                          (drf_drdy[(sinks)-1:0]),
-     .refup_drdy                        (),                      // Templated
+     .refup_drdy                        (refup_drdy),
      .pgmem_wr_en                       (pgmem_wr_en),
      .pgmem_wr_addr                     (pgmem_wr_addr[(lpsz)-1:0]),
      .pgmem_wr_data                     (pgmem_wr_data[(lpdsz)-1:0]),
@@ -199,9 +195,9 @@ module bench;
      .rlpr_drdy                         (rlpr_drdy[(sinks)-1:0]),
      .drf_srdy                          (drf_srdy[(sinks)-1:0]),
      .drf_page_list                     (drf_page_list[sinks*lpsz*2-1:0]), // Templated
-     .refup_srdy                        (1'b0),                  // Templated
-     .refup_page                        ({lpsz{1'b0}}),          // Templated
-     .refup_count                       ({refsz{1'b0}}),         // Templated
+     .refup_srdy                        (refup_srdy),
+     .refup_page                        (refup_page[(lpsz)-1:0]),
+     .refup_count                       (refup_count[(refsz)-1:0]),
      .pgmem_rd_data                     (pgmem_rd_data[(lpdsz)-1:0]),
      .ref_rd_data                       (ref_rd_data[(refsz)-1:0]));
 
