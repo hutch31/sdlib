@@ -60,7 +60,7 @@ module llmanager
   // page dereference interface
   input [sinks-1:0]   drf_srdy;
   output [sinks-1:0]  drf_drdy;
-  input [sinks*lpsz-1:0] drf_page_list;
+  input [sinks*lpsz*2-1:0] drf_page_list;
 
   // reference count update interface
   input                  refup_srdy;
@@ -98,7 +98,7 @@ module llmanager
 
   wire reclaim_srdy;
   reg  reclaim_drdy;
-  wire [lpsz-1:0] reclaim_page;
+  wire [lpsz-1:0] reclaim_start_page, reclaim_end_page;
 
   reg [lpdsz-1:0]  pgmem_wr_data;
   reg             pgmem_wr_en;
@@ -222,7 +222,7 @@ module llmanager
                 iparr_src_id    <= req_src_id;
 
               if (reclaim_srdy & reclaim_drdy)
-                free_tail_ptr <= reclaim_page;
+                free_tail_ptr <= reclaim_end_page;
 
               if (pgmem_rd_en & !pgmem_wr_en)
                 free_count <= free_count - 1;
@@ -279,7 +279,7 @@ module llmanager
               reclaim_drdy = 1;
               pgmem_wr_en = 1;
               pgmem_wr_addr = free_tail_ptr;
-              pgmem_wr_data = reclaim_page;
+              pgmem_wr_data = reclaim_start_page;
             end
           else if (ilnp_srdy)
             begin
@@ -332,7 +332,7 @@ module llmanager
   generate if (maxref == 0)
     begin : no_ref_count
   sd_rrmux #(.mode(0), .fast_arb(1), 
-             .width(lpsz), .inputs(sinks)) reclaim_mux
+             .width(lpsz*2), .inputs(sinks)) reclaim_mux
     (
      .clk         (clk),
      .reset       (reset),
@@ -344,7 +344,7 @@ module llmanager
 
      .p_srdy      (reclaim_srdy),
      .p_drdy      (reclaim_drdy),
-     .p_data      (reclaim_page),
+     .p_data      ({reclaim_start_page,reclaim_end_page}),
      .p_grant     ()
      );
     end // block: no_ref_count

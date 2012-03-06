@@ -27,7 +27,7 @@ module llwrport
    // link page reclaim interface
    output reg            drf_srdy,
    input                 drf_drdy,
-   output reg [lpsz-1:0] drf_page_list
+   output reg [lpsz*2-1:0] drf_page_list
    );
 
   localparam stop_page = { 1'b1, {lpdsz-1{1'b0}} };
@@ -88,7 +88,7 @@ module llwrport
     begin
       @(posedge clk);
       drf_srdy <= 1;
-      drf_page_list <= pnum;
+      drf_page_list <= { pnum, pnum };
       @(posedge clk);
       while (!drf_drdy)
         @(posedge clk);

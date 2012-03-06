@@ -9,6 +9,7 @@ module bench;
   localparam lpdsz = 5;
   localparam pages = 16;
   localparam refsz = 3;
+  localparam maxref = 0;
 
   reg   clk;
   reg   reset;
@@ -17,24 +18,24 @@ module bench;
   /*AUTOWIRE*/
   // Beginning of automatic wires (for undeclared instantiated-module outputs)
   wire [(sinks)-1:0]    drf_drdy;               // From lm of llmanager.v
-  wire [15:0]           drf_page_list;          // From wport0 of llwrport.v, ...
+  wire [31:0]           drf_page_list;          // From wport0 of llwrport.v, ...
   wire [3:0]            drf_srdy;               // From wport0 of llwrport.v, ...
   wire [(lpsz):0]       free_count;             // From lm of llmanager.v
+  wire [3:0]            ip_drdy;                // From fibstub of fibstub.v
+  wire [(lpsz)-1:0]     ip_page0;               // From rport0 of llrdport.v
+  wire [(lpsz)-1:0]     ip_page1;               // From rport1 of llrdport.v
+  wire [(lpsz)-1:0]     ip_page2;               // From rport2 of llrdport.v
+  wire [(lpsz)-1:0]     ip_page3;               // From rport3 of llrdport.v
+  wire [3:0]            ip_srdy;                // From rport0 of llrdport.v, ...
   wire [(sources)-1:0]  lnp_drdy;               // From lm of llmanager.v
   wire [35:0]           lnp_pnp;                // From rport0 of llrdport.v, ...
   wire [3:0]            lnp_srdy;               // From rport0 of llrdport.v, ...
-  wire                  op_drdy0;               // From wport0 of llwrport.v
-  wire                  op_drdy1;               // From wport1 of llwrport.v
-  wire                  op_drdy2;               // From wport2 of llwrport.v
-  wire                  op_drdy3;               // From wport3 of llwrport.v
-  wire [(lpsz)-1:0]     op_page0;               // From rport0 of llrdport.v
-  wire [(lpsz)-1:0]     op_page1;               // From rport1 of llrdport.v
-  wire [(lpsz)-1:0]     op_page2;               // From rport2 of llrdport.v
-  wire [(lpsz)-1:0]     op_page3;               // From rport3 of llrdport.v
-  wire                  op_srdy0;               // From rport0 of llrdport.v
-  wire                  op_srdy1;               // From rport1 of llrdport.v
-  wire                  op_srdy2;               // From rport2 of llrdport.v
-  wire                  op_srdy3;               // From rport3 of llrdport.v
+  wire [3:0]            op_drdy;                // From wport0 of llwrport.v, ...
+  wire [(lpsz)-1:0]     op_page0;               // From fibstub of fibstub.v
+  wire [(lpsz)-1:0]     op_page1;               // From fibstub of fibstub.v
+  wire [(lpsz)-1:0]     op_page2;               // From fibstub of fibstub.v
+  wire [(lpsz)-1:0]     op_page3;               // From fibstub of fibstub.v
+  wire [3:0]            op_srdy;                // From fibstub of fibstub.v
   wire [(sources)-1:0]  par_drdy;               // From lm of llmanager.v
   wire [3:0]            par_srdy;               // From rport0 of llrdport.v, ...
   wire [3:0]            parr_drdy;              // From rport0 of llrdport.v, ...
@@ -52,6 +53,9 @@ module bench;
   wire [(lpsz)-1:0]     ref_wr_addr;            // From lm of llmanager.v
   wire [(refsz)-1:0]    ref_wr_data;            // From lm of llmanager.v
   wire                  ref_wr_en;              // From lm of llmanager.v
+  wire [(refsz)-1:0]    refup_count;            // From fibstub of fibstub.v
+  wire [(lpsz)-1:0]     refup_page;             // From fibstub of fibstub.v
+  wire                  refup_srdy;             // From fibstub of fibstub.v
   wire [(sinks)-1:0]    rlp_drdy;               // From lm of llmanager.v
   wire [15:0]           rlp_rd_page;            // From wport0 of llwrport.v, ...
   wire [3:0]            rlp_srdy;               // From wport0 of llwrport.v, ...
@@ -147,6 +151,8 @@ module bench;
      .refup_srdy                        (1'b0),
      .refup_page                        ({lpsz{1'b0}}),
      .refup_count                       ({refsz{1'b0}}),
+ 
+     .drf_page_list                     (drf_page_list[sinks*lpsz*2-1:0]),
  );
  */
   llmanager #(
@@ -155,7 +161,7 @@ module bench;
               .lpdsz                    (lpdsz),
               .pages                    (pages),
               .sources                  (sources),
-              .maxref                   (0),
+              .maxref                   (maxref),
               .refsz                    (refsz),
               .sinks                    (sinks),
               .sksz                     (sksz)) lm
@@ -192,7 +198,7 @@ module bench;
      .rlp_rd_page                       (rlp_rd_page[(sinks)*(lpsz)-1:0]),
      .rlpr_drdy                         (rlpr_drdy[(sinks)-1:0]),
      .drf_srdy                          (drf_srdy[(sinks)-1:0]),
-     .drf_page_list                     (drf_page_list[(sinks)*(lpsz)-1:0]),
+     .drf_page_list                     (drf_page_list[sinks*lpsz*2-1:0]), // Templated
      .refup_srdy                        (1'b0),                  // Templated
      .refup_page                        ({lpsz{1'b0}}),          // Templated
      .refup_count                       ({refsz{1'b0}}),         // Templated
@@ -201,9 +207,9 @@ module bench;
 
 /* llrdport AUTO_TEMPLATE
  (
-     .op_srdy                           (op_srdy@),
-     .op_drdy                           (op_drdy@),
-     .op_page                           (op_page@[(lpsz)-1:0]),
+     .ip_srdy                           (ip_srdy[@]),
+     .ip_drdy                           (ip_drdy[@]),
+     .ip_page                           (ip_page@[(lpsz)-1:0]),
  
      .par_srdy                             (par_srdy[@]),
      .par_drdy                             (par_drdy[@]),
@@ -227,8 +233,8 @@ module bench;
      .parr_drdy                         (parr_drdy[0]),          // Templated
      .lnp_srdy                          (lnp_srdy[0]),           // Templated
      .lnp_pnp                           (lnp_pnp[8:0]),          // Templated
-     .op_srdy                           (op_srdy0),              // Templated
-     .op_page                           (op_page0[(lpsz)-1:0]),  // Templated
+     .ip_srdy                           (ip_srdy[0]),            // Templated
+     .ip_page                           (ip_page0[(lpsz)-1:0]),  // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
@@ -236,7 +242,7 @@ module bench;
      .parr_srdy                         (parr_srdy[0]),          // Templated
      .parr_page                         (parr_page[(lpsz)-1:0]),
      .lnp_drdy                          (lnp_drdy[0]),           // Templated
-     .op_drdy                           (op_drdy0));              // Templated
+     .ip_drdy                           (ip_drdy[0]));            // Templated
 
   llrdport #(/*AUTOINSTPARAM*/
              // Parameters
@@ -249,8 +255,8 @@ module bench;
      .parr_drdy                         (parr_drdy[1]),          // Templated
      .lnp_srdy                          (lnp_srdy[1]),           // Templated
      .lnp_pnp                           (lnp_pnp[17:9]),         // Templated
-     .op_srdy                           (op_srdy1),              // Templated
-     .op_page                           (op_page1[(lpsz)-1:0]),  // Templated
+     .ip_srdy                           (ip_srdy[1]),            // Templated
+     .ip_page                           (ip_page1[(lpsz)-1:0]),  // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
@@ -258,7 +264,7 @@ module bench;
      .parr_srdy                         (parr_srdy[1]),          // Templated
      .parr_page                         (parr_page[(lpsz)-1:0]),
      .lnp_drdy                          (lnp_drdy[1]),           // Templated
-     .op_drdy                           (op_drdy1));              // Templated
+     .ip_drdy                           (ip_drdy[1]));            // Templated
 
   llrdport #(/*AUTOINSTPARAM*/
              // Parameters
@@ -271,8 +277,8 @@ module bench;
      .parr_drdy                         (parr_drdy[2]),          // Templated
      .lnp_srdy                          (lnp_srdy[2]),           // Templated
      .lnp_pnp                           (lnp_pnp[26:18]),        // Templated
-     .op_srdy                           (op_srdy2),              // Templated
-     .op_page                           (op_page2[(lpsz)-1:0]),  // Templated
+     .ip_srdy                           (ip_srdy[2]),            // Templated
+     .ip_page                           (ip_page2[(lpsz)-1:0]),  // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
@@ -280,7 +286,7 @@ module bench;
      .parr_srdy                         (parr_srdy[2]),          // Templated
      .parr_page                         (parr_page[(lpsz)-1:0]),
      .lnp_drdy                          (lnp_drdy[2]),           // Templated
-     .op_drdy                           (op_drdy2));              // Templated
+     .ip_drdy                           (ip_drdy[2]));            // Templated
 
   llrdport #(/*AUTOINSTPARAM*/
              // Parameters
@@ -293,8 +299,8 @@ module bench;
      .parr_drdy                         (parr_drdy[3]),          // Templated
      .lnp_srdy                          (lnp_srdy[3]),           // Templated
      .lnp_pnp                           (lnp_pnp[35:27]),        // Templated
-     .op_srdy                           (op_srdy3),              // Templated
-     .op_page                           (op_page3[(lpsz)-1:0]),  // Templated
+     .ip_srdy                           (ip_srdy[3]),            // Templated
+     .ip_page                           (ip_page3[(lpsz)-1:0]),  // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
@@ -302,12 +308,12 @@ module bench;
      .parr_srdy                         (parr_srdy[3]),          // Templated
      .parr_page                         (parr_page[(lpsz)-1:0]),
      .lnp_drdy                          (lnp_drdy[3]),           // Templated
-     .op_drdy                           (op_drdy3));              // Templated
+     .ip_drdy                           (ip_drdy[3]));            // Templated
 
 /* llwrport AUTO_TEMPLATE
  (
-     .op_srdy                           (op_srdy@),
-     .op_drdy                           (op_drdy@),
+     .op_srdy                           (op_srdy[@]),
+     .op_drdy                           (op_drdy[@]),
      .op_page                           (op_page@[(lpsz)-1:0]),
  
      .rlp_srdy                          (rlp_srdy[@]),
@@ -320,7 +326,7 @@ module bench;
  
      .drf_srdy                         (drf_srdy[@]),
      .drf_drdy                         (drf_drdy[@]),
-     .drf_page_list                    (drf_page_list[@"(- (* (+ @ 1) 4) 1)":@"(* @ 4)"]),
+     .drf_page_list                    (drf_page_list[@"(- (* (+ @ 1) 8) 1)":@"(* @ 8)"]),
   );
  */
   llwrport #(/*AUTOINSTPARAM*/
@@ -330,16 +336,16 @@ module bench;
              .sinks                     (sinks)) wport0
     (/*AUTOINST*/
      // Outputs
-     .op_drdy                           (op_drdy0),              // Templated
+     .op_drdy                           (op_drdy[0]),            // Templated
      .rlp_srdy                          (rlp_srdy[0]),           // Templated
      .rlp_rd_page                       (rlp_rd_page[3:0]),      // Templated
      .rlpr_drdy                         (rlpr_drdy[0]),          // Templated
      .drf_srdy                          (drf_srdy[0]),           // Templated
-     .drf_page_list                     (drf_page_list[3:0]),    // Templated
+     .drf_page_list                     (drf_page_list[7:0]),    // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
-     .op_srdy                           (op_srdy0),              // Templated
+     .op_srdy                           (op_srdy[0]),            // Templated
      .op_page                           (op_page0[(lpsz)-1:0]),  // Templated
      .rlp_drdy                          (rlp_drdy[0]),           // Templated
      .rlpr_srdy                         (rlpr_srdy[0]),          // Templated
@@ -353,16 +359,16 @@ module bench;
              .sinks                     (sinks)) wport1
     (/*AUTOINST*/
      // Outputs
-     .op_drdy                           (op_drdy1),              // Templated
+     .op_drdy                           (op_drdy[1]),            // Templated
      .rlp_srdy                          (rlp_srdy[1]),           // Templated
      .rlp_rd_page                       (rlp_rd_page[7:4]),      // Templated
      .rlpr_drdy                         (rlpr_drdy[1]),          // Templated
      .drf_srdy                          (drf_srdy[1]),           // Templated
-     .drf_page_list                     (drf_page_list[7:4]),    // Templated
+     .drf_page_list                     (drf_page_list[15:8]),   // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
-     .op_srdy                           (op_srdy1),              // Templated
+     .op_srdy                           (op_srdy[1]),            // Templated
      .op_page                           (op_page1[(lpsz)-1:0]),  // Templated
      .rlp_drdy                          (rlp_drdy[1]),           // Templated
      .rlpr_srdy                         (rlpr_srdy[1]),          // Templated
@@ -376,16 +382,16 @@ module bench;
              .sinks                     (sinks)) wport2
     (/*AUTOINST*/
      // Outputs
-     .op_drdy                           (op_drdy2),              // Templated
+     .op_drdy                           (op_drdy[2]),            // Templated
      .rlp_srdy                          (rlp_srdy[2]),           // Templated
      .rlp_rd_page                       (rlp_rd_page[11:8]),     // Templated
      .rlpr_drdy                         (rlpr_drdy[2]),          // Templated
      .drf_srdy                          (drf_srdy[2]),           // Templated
-     .drf_page_list                     (drf_page_list[11:8]),   // Templated
+     .drf_page_list                     (drf_page_list[23:16]),  // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
-     .op_srdy                           (op_srdy2),              // Templated
+     .op_srdy                           (op_srdy[2]),            // Templated
      .op_page                           (op_page2[(lpsz)-1:0]),  // Templated
      .rlp_drdy                          (rlp_drdy[2]),           // Templated
      .rlpr_srdy                         (rlpr_srdy[2]),          // Templated
@@ -399,21 +405,48 @@ module bench;
              .sinks                     (sinks)) wport3
     (/*AUTOINST*/
      // Outputs
-     .op_drdy                           (op_drdy3),              // Templated
+     .op_drdy                           (op_drdy[3]),            // Templated
      .rlp_srdy                          (rlp_srdy[3]),           // Templated
      .rlp_rd_page                       (rlp_rd_page[15:12]),    // Templated
      .rlpr_drdy                         (rlpr_drdy[3]),          // Templated
      .drf_srdy                          (drf_srdy[3]),           // Templated
-     .drf_page_list                     (drf_page_list[15:12]),  // Templated
+     .drf_page_list                     (drf_page_list[31:24]),  // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
-     .op_srdy                           (op_srdy3),              // Templated
+     .op_srdy                           (op_srdy[3]),            // Templated
      .op_page                           (op_page3[(lpsz)-1:0]),  // Templated
      .rlp_drdy                          (rlp_drdy[3]),           // Templated
      .rlpr_srdy                         (rlpr_srdy[3]),          // Templated
      .rlpr_data                         (rlpr_data[lpdsz-1:0]),  // Templated
      .drf_drdy                          (drf_drdy[3]));           // Templated
+
+  fibstub #(/*AUTOINSTPARAM*/
+            // Parameters
+            .lpsz                       (lpsz),
+            .refsz                      (refsz),
+            .maxref                     (maxref)) fibstub
+    (/*AUTOINST*/
+     // Outputs
+     .ip_drdy                           (ip_drdy[3:0]),
+     .op_srdy                           (op_srdy[3:0]),
+     .op_page0                          (op_page0[(lpsz)-1:0]),
+     .op_page1                          (op_page1[(lpsz)-1:0]),
+     .op_page2                          (op_page2[(lpsz)-1:0]),
+     .op_page3                          (op_page3[(lpsz)-1:0]),
+     .refup_srdy                        (refup_srdy),
+     .refup_page                        (refup_page[(lpsz)-1:0]),
+     .refup_count                       (refup_count[(refsz)-1:0]),
+     // Inputs
+     .clk                               (clk),
+     .reset                             (reset),
+     .ip_srdy                           (ip_srdy[3:0]),
+     .ip_page0                          (ip_page0[(lpsz)-1:0]),
+     .ip_page1                          (ip_page1[(lpsz)-1:0]),
+     .ip_page2                          (ip_page2[(lpsz)-1:0]),
+     .ip_page3                          (ip_page3[(lpsz)-1:0]),
+     .op_drdy                           (op_drdy[3:0]),
+     .refup_drdy                        (refup_drdy));
 
   function [31:0] instant_walk_free;
     input foo;

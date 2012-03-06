@@ -26,9 +26,9 @@ module llrdport
    output reg [lpsz+lpdsz-1:0] lnp_pnp,
 
    // queue to output port
-   output reg        op_srdy,
-   input             op_drdy,
-   output reg [lpsz-1:0] op_page
+   output reg        ip_srdy,
+   input             ip_drdy,
+   output reg [lpsz-1:0] ip_page
    );
 
   reg [lpdsz-1:0]          p1, p2, p3;
@@ -89,12 +89,12 @@ module llrdport
     input [lpsz-1:0] pnum;
     begin
       @(posedge clk);
-      op_srdy <= 1;
-      op_page <= pnum;
-      //if (op_drdy) @(posedge clk);
+      ip_srdy <= 1;
+      ip_page <= pnum;
+      //if (ip_drdy) @(posedge clk);
       @(posedge clk);
-      while (!op_drdy) @(posedge clk);
-      op_srdy <= 0;
+      while (!ip_drdy) @(posedge clk);
+      ip_srdy <= 0;
     end
   endtask
 
@@ -106,8 +106,8 @@ module llrdport
       parr_drdy = 0;
       lnp_srdy = 0;
       lnp_pnp  = 0;
-      op_srdy = 0;
-      op_page = 0;
+      ip_srdy = 0;
+      ip_page = 0;
       
       @(posedge clk);
       if (reset || (packets > `PCOUNT)) disable aloop;

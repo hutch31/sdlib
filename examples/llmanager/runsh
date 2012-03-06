@@ -1,7 +1,7 @@
 #!/bin/bash
 
 rm -f bench
-iverilog -o bench -Y .v bench.v llrdport.v llwrport.v \
+iverilog -o bench -Y .v bench.v fibstub.v llrdport.v llwrport.v \
 llmanager.v llmanager_refcount.v \
 ../../rtl/verilog/forks/sd_rrmux.v \
 ../../rtl/verilog/forks/sd_mirror.v \
