@@ -33,13 +33,14 @@ module llwrport
   localparam stop_page = { 1'b1, {lpdsz-1{1'b0}} };
 
   wire                    p_srdy;
-  wire [lpsz-1:0]         p_data;
+  wire [lpsz*2-1:0]         p_data;
   reg                     p_drdy;
   reg [lpdsz-1:0]         cur_page;
   integer                 wait_cyc;
   reg [lpdsz-1:0]         read_page;
   integer                 pgcount;
   integer                 packets;
+  reg [lpsz-1:0]          start_page, end_page;
 
   sd_fifo_s #(.width(lpsz), .depth(64)) opbuf
     (
@@ -84,16 +85,17 @@ module llwrport
   endtask // read_link_data
 
   task return_page;
-    input [lpsz-1:0] pnum;
+    input [lpsz-1:0] start_pnum;
+    input [lpsz-1:0] end_pnum;
     begin
       @(posedge clk);
       drf_srdy <= 1;
-      drf_page_list <= { pnum, pnum };
+      drf_page_list <= { start_pnum, end_pnum };
       @(posedge clk);
       while (!drf_drdy)
         @(posedge clk);
       drf_srdy <= 0;
-      $display ("%t: %m: Returned page %0d", $time, pnum);
+      $display ("%t: %m: Returned page list [%0d,%0d]", $time, start_pnum, end_pnum);
       bench.print_free_list;
     end
   endtask
@@ -115,18 +117,23 @@ module llwrport
 
       while (!p_srdy)
         @(posedge clk);
-      cur_page = p_data;
+      start_page = p_data[lpsz-1:0];
+      //{ start_page, end_page } = p_data;
       p_drdy = 1;
       @(posedge clk);
       p_drdy = 0;
 
+      cur_page = start_page;
       while (cur_page != stop_page)
         begin
           read_link_data (cur_page, read_page);
-          return_page (cur_page);
+          end_page = cur_page;
+          //return_page (cur_page);
           cur_page = read_page;
           pgcount = pgcount + 1;
         end
+
+      return_page (start_page, end_page);
 
       $display ("%t: %m: LLWRPORT: Read packet %0d with %0d pages", $time, packets, pgcount);
       packets = packets + 1;

@@ -15,54 +15,54 @@ module bench;
   reg   reset;
   integer bfree;
 
-  /*AUTOWIRE*/
-  // Beginning of automatic wires (for undeclared instantiated-module outputs)
-  wire [(sinks)-1:0]    drf_drdy;               // From lm of llmanager.v
-  wire [31:0]           drf_page_list;          // From wport0 of llwrport.v, ...
-  wire [3:0]            drf_srdy;               // From wport0 of llwrport.v, ...
-  wire [(lpsz):0]       free_count;             // From lm of llmanager.v
-  wire [3:0]            ip_drdy;                // From fibstub of fibstub.v
-  wire [(lpsz)-1:0]     ip_page0;               // From rport0 of llrdport.v
-  wire [(lpsz)-1:0]     ip_page1;               // From rport1 of llrdport.v
-  wire [(lpsz)-1:0]     ip_page2;               // From rport2 of llrdport.v
-  wire [(lpsz)-1:0]     ip_page3;               // From rport3 of llrdport.v
-  wire [3:0]            ip_srdy;                // From rport0 of llrdport.v, ...
-  wire [(sources)-1:0]  lnp_drdy;               // From lm of llmanager.v
-  wire [35:0]           lnp_pnp;                // From rport0 of llrdport.v, ...
-  wire [3:0]            lnp_srdy;               // From rport0 of llrdport.v, ...
-  wire [3:0]            op_drdy;                // From wport0 of llwrport.v, ...
-  wire [(lpsz)-1:0]     op_page0;               // From fibstub of fibstub.v
-  wire [(lpsz)-1:0]     op_page1;               // From fibstub of fibstub.v
-  wire [(lpsz)-1:0]     op_page2;               // From fibstub of fibstub.v
-  wire [(lpsz)-1:0]     op_page3;               // From fibstub of fibstub.v
-  wire [3:0]            op_srdy;                // From fibstub of fibstub.v
-  wire [(sources)-1:0]  par_drdy;               // From lm of llmanager.v
-  wire [3:0]            par_srdy;               // From rport0 of llrdport.v, ...
-  wire [3:0]            parr_drdy;              // From rport0 of llrdport.v, ...
-  wire [(lpsz)-1:0]     parr_page;              // From lm of llmanager.v
-  wire [(sources)-1:0]  parr_srdy;              // From lm of llmanager.v
-  wire [(lpsz)-1:0]     pgmem_rd_addr;          // From lm of llmanager.v
-  wire [(lpdsz)-1:0]    pgmem_rd_data;          // From pglist_mem of behave2p_mem.v
-  wire                  pgmem_rd_en;            // From lm of llmanager.v
-  wire [(lpsz)-1:0]     pgmem_wr_addr;          // From lm of llmanager.v
-  wire [(lpdsz)-1:0]    pgmem_wr_data;          // From lm of llmanager.v
-  wire                  pgmem_wr_en;            // From lm of llmanager.v
-  wire [(lpsz)-1:0]     ref_rd_addr;            // From lm of llmanager.v
-  wire [(refsz)-1:0]    ref_rd_data;            // From ref_mem of behave2p_mem.v
-  wire                  ref_rd_en;              // From lm of llmanager.v
-  wire [(lpsz)-1:0]     ref_wr_addr;            // From lm of llmanager.v
-  wire [(refsz)-1:0]    ref_wr_data;            // From lm of llmanager.v
-  wire                  ref_wr_en;              // From lm of llmanager.v
-  wire [(refsz)-1:0]    refup_count;            // From fibstub of fibstub.v
-  wire [(lpsz)-1:0]     refup_page;             // From fibstub of fibstub.v
-  wire                  refup_srdy;             // From fibstub of fibstub.v
-  wire [(sinks)-1:0]    rlp_drdy;               // From lm of llmanager.v
-  wire [15:0]           rlp_rd_page;            // From wport0 of llwrport.v, ...
-  wire [3:0]            rlp_srdy;               // From wport0 of llwrport.v, ...
-  wire [(lpdsz)-1:0]    rlpr_data;              // From lm of llmanager.v
-  wire [3:0]            rlpr_drdy;              // From wport0 of llwrport.v, ...
-  wire [(sinks)-1:0]    rlpr_srdy;              // From lm of llmanager.v
-  // End of automatics
+   /*AUTOWIRE*/
+   // Beginning of automatic wires (for undeclared instantiated-module outputs)
+   wire [(sinks)-1:0]   drf_drdy;               // From lm of llmanager.v
+   wire [31:0]          drf_page_list;          // From wport0 of llwrport.v, ...
+   wire [3:0]           drf_srdy;               // From wport0 of llwrport.v, ...
+   wire [(lpsz):0]      free_count;             // From lm of llmanager.v
+   wire [3:0]           ip_drdy;                // From fibstub of fibstub.v
+   wire [(lpsz)-1:0]    ip_page0;               // From rport0 of llrdport.v
+   wire [(lpsz)-1:0]    ip_page1;               // From rport1 of llrdport.v
+   wire [(lpsz)-1:0]    ip_page2;               // From rport2 of llrdport.v
+   wire [(lpsz)-1:0]    ip_page3;               // From rport3 of llrdport.v
+   wire [3:0]           ip_srdy;                // From rport0 of llrdport.v, ...
+   wire [(sources)-1:0] lnp_drdy;               // From lm of llmanager.v
+   wire [35:0]          lnp_pnp;                // From rport0 of llrdport.v, ...
+   wire [3:0]           lnp_srdy;               // From rport0 of llrdport.v, ...
+   wire [3:0]           op_drdy;                // From wport0 of llwrport.v, ...
+   wire [(lpsz)-1:0]    op_page0;               // From fibstub of fibstub.v
+   wire [(lpsz)-1:0]    op_page1;               // From fibstub of fibstub.v
+   wire [(lpsz)-1:0]    op_page2;               // From fibstub of fibstub.v
+   wire [(lpsz)-1:0]    op_page3;               // From fibstub of fibstub.v
+   wire [3:0]           op_srdy;                // From fibstub of fibstub.v
+   wire [(sources)-1:0] par_drdy;               // From lm of llmanager.v
+   wire [3:0]           par_srdy;               // From rport0 of llrdport.v, ...
+   wire [3:0]           parr_drdy;              // From rport0 of llrdport.v, ...
+   wire [(lpsz)-1:0]    parr_page;              // From lm of llmanager.v
+   wire [(sources)-1:0] parr_srdy;              // From lm of llmanager.v
+   wire [(lpsz)-1:0]    pgmem_rd_addr;          // From lm of llmanager.v
+   wire [(lpdsz)-1:0]   pgmem_rd_data;          // From pglist_mem of behave2p_mem.v
+   wire                 pgmem_rd_en;            // From lm of llmanager.v
+   wire [(lpsz)-1:0]    pgmem_wr_addr;          // From lm of llmanager.v
+   wire [(lpdsz)-1:0]   pgmem_wr_data;          // From lm of llmanager.v
+   wire                 pgmem_wr_en;            // From lm of llmanager.v
+   wire [(lpsz)-1:0]    ref_rd_addr;            // From lm of llmanager.v
+   wire [(refsz)-1:0]   ref_rd_data;            // From ref_mem of behave2p_mem.v
+   wire                 ref_rd_en;              // From lm of llmanager.v
+   wire [(lpsz)-1:0]    ref_wr_addr;            // From lm of llmanager.v
+   wire [(refsz)-1:0]   ref_wr_data;            // From lm of llmanager.v
+   wire                 ref_wr_en;              // From lm of llmanager.v
+   wire [(refsz)-1:0]   refup_count;            // From fibstub of fibstub.v
+   wire [(lpsz)-1:0]    refup_page;             // From fibstub of fibstub.v
+   wire                 refup_srdy;             // From fibstub of fibstub.v
+   wire [(sinks)-1:0]   rlp_drdy;               // From lm of llmanager.v
+   wire [15:0]          rlp_rd_page;            // From wport0 of llwrport.v, ...
+   wire [3:0]           rlp_srdy;               // From wport0 of llwrport.v, ...
+   wire [(lpdsz)-1:0]   rlpr_data;              // From lm of llmanager.v
+   wire [3:0]           rlpr_drdy;              // From wport0 of llwrport.v, ...
+   wire [(sinks)-1:0]   rlpr_srdy;              // From lm of llmanager.v
+   // End of automatics
 
   initial
     begin

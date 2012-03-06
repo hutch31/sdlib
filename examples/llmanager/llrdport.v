@@ -86,11 +86,11 @@ module llrdport
   endtask // link_page
 
   task send_out;
-    input [lpsz-1:0] pnum;
+    input [lpsz-1:0] start_pnum;
     begin
       @(posedge clk);
       ip_srdy <= 1;
-      ip_page <= pnum;
+      ip_page <= start_pnum;
       //if (ip_drdy) @(posedge clk);
       @(posedge clk);
       while (!ip_drdy) @(posedge clk);
