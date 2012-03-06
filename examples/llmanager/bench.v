@@ -80,7 +80,7 @@ module bench;
       #100;
       reset = 0;
       wait (done == {4{1'b1}});
-      #1000;
+      #10000;
       walk_free_list;
       $finish;
     end

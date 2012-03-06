@@ -2,7 +2,7 @@
  * Stub simulating a read port device communicating
  * with the link list manager
  */
-`define PCOUNT 5000
+`define PCOUNT 1000
 
 module llrdport
   #(parameter lpsz=8,
@@ -137,7 +137,7 @@ module llrdport
       $display ("%t: %m: LLRDPORT: Sourcing packet %0d [%0d,%0d]", $time, p, p1, p3);
 
       // wait 1-10 cycles
-      wait_cyc = {$random} % 9 + 1;
+      wait_cyc = {$random} % 30 + 1;
       repeat (wait_cyc) @(posedge clk);
 
       
