@@ -14,9 +14,14 @@ module bench;
   reg   clk;
   reg   reset;
   integer bfree;
+  integer packets;
+  event   free_list;
+
+  initial packets = 0;
 
    /*AUTOWIRE*/
    // Beginning of automatic wires (for undeclared instantiated-module outputs)
+   wire [3:0]           done;                   // From rport0 of llrdport.v, ...
    wire [(sinks)-1:0]   drf_drdy;               // From lm of llmanager.v
    wire [31:0]          drf_page_list;          // From wport0 of llwrport.v, ...
    wire [3:0]           drf_srdy;               // From wport0 of llwrport.v, ...
@@ -74,7 +79,8 @@ module bench;
       reset = 1;
       #100;
       reset = 0;
-      #50000;
+      wait (done == {4{1'b1}});
+      #1000;
       walk_free_list;
       $finish;
     end
@@ -216,6 +222,8 @@ module bench;
      .lnp_srdy                          (lnp_srdy[@]),
      .lnp_drdy                          (lnp_drdy[@]),
      .lnp_pnp                           (lnp_pnp[@"(- (* (+ @ 1) 9) 1)":@"(* @ 9)"]),
+ 
+     .done                              (done[@]),
  );
  */
  llrdport #(/*AUTOINSTPARAM*/
@@ -231,6 +239,7 @@ module bench;
      .lnp_pnp                           (lnp_pnp[8:0]),          // Templated
      .ip_srdy                           (ip_srdy[0]),            // Templated
      .ip_page                           (ip_page0[(lpsz)-1:0]),  // Templated
+     .done                              (done[0]),               // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
@@ -253,6 +262,7 @@ module bench;
      .lnp_pnp                           (lnp_pnp[17:9]),         // Templated
      .ip_srdy                           (ip_srdy[1]),            // Templated
      .ip_page                           (ip_page1[(lpsz)-1:0]),  // Templated
+     .done                              (done[1]),               // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
@@ -275,6 +285,7 @@ module bench;
      .lnp_pnp                           (lnp_pnp[26:18]),        // Templated
      .ip_srdy                           (ip_srdy[2]),            // Templated
      .ip_page                           (ip_page2[(lpsz)-1:0]),  // Templated
+     .done                              (done[2]),               // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
@@ -297,6 +308,7 @@ module bench;
      .lnp_pnp                           (lnp_pnp[35:27]),        // Templated
      .ip_srdy                           (ip_srdy[3]),            // Templated
      .ip_page                           (ip_page3[(lpsz)-1:0]),  // Templated
+     .done                              (done[3]),               // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
@@ -483,7 +495,10 @@ module bench;
         end
       $display ("");
     end
-  endtask
+  endtask // print_free_list
+
+  always @(free_list)
+    print_free_list;
       
 
   task walk_free_list;

@@ -2,7 +2,7 @@
  * Stub simulating a read port device communicating
  * with the link list manager
  */
-`define PCOUNT 10
+`define PCOUNT 5000
 
 module llrdport
   #(parameter lpsz=8,
@@ -28,7 +28,9 @@ module llrdport
    // queue to output port
    output reg        ip_srdy,
    input             ip_drdy,
-   output reg [lpsz-1:0] ip_page
+   output reg [lpsz-1:0] ip_page,
+
+   output reg        done
    );
 
   reg [lpdsz-1:0]          p1, p2, p3;
@@ -37,7 +39,7 @@ module llrdport
   localparam stop_page = { 1'b1, {lpdsz-1{1'b0}} };
 
   wire [lpdsz-1:0]         stop;
-  integer                  packets;
+  integer                  p;
 
   assign stop = stop_page;
 
@@ -66,7 +68,7 @@ module llrdport
       pagenum = parr_page;
       parr_drdy <= 0;
       $display ("%t: %m: Received page %0d", $time, pagenum);
-      bench.print_free_list;
+      ->bench.free_list;
     end
   endtask // get_page
 
@@ -98,7 +100,7 @@ module llrdport
     end
   endtask
 
-  initial packets = 0;
+  initial done = 0;
 
   always
     begin : aloop
@@ -110,8 +112,13 @@ module llrdport
       ip_page = 0;
       
       @(posedge clk);
-      if (reset || (packets > `PCOUNT)) disable aloop;
-      $display ("%t: %m: Sourcing packet %0d", $time, packets);
+      p = bench.packets;
+      if (reset || (p > `PCOUNT)) 
+        begin
+          if (!reset) done = 1;
+          disable aloop;
+        end
+      bench.packets = bench.packets + 1;
 
       // request first page and store it
       get_page (p1);
@@ -127,12 +134,13 @@ module llrdport
 
       // send head page to output port
       send_out (p1);
+      $display ("%t: %m: LLRDPORT: Sourcing packet %0d [%0d,%0d]", $time, p, p1, p3);
 
       // wait 1-10 cycles
       wait_cyc = {$random} % 9 + 1;
       repeat (wait_cyc) @(posedge clk);
 
-      packets = packets + 1;
+      
     end // block: aloop
 
 

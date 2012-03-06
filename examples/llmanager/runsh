@@ -8,5 +8,6 @@ llmanager.v llmanager_refcount.v \
 -y ../../rtl/verilog/closure \
 -y ../../rtl/verilog/buffers \
 ../../rtl/verilog/memory/behave2p_mem.v
-./bench
+./bench | tee bench.log
+
 

@@ -41,6 +41,7 @@ module llwrport
   integer                 pgcount;
   integer                 packets;
   reg [lpsz-1:0]          start_page, end_page;
+  event                   launch;
 
   sd_fifo_s #(.width(lpsz), .depth(64)) opbuf
     (
@@ -96,7 +97,7 @@ module llwrport
         @(posedge clk);
       drf_srdy <= 0;
       $display ("%t: %m: Returned page list [%0d,%0d]", $time, start_pnum, end_pnum);
-      bench.print_free_list;
+      ->launch;
     end
   endtask
 
@@ -127,14 +128,14 @@ module llwrport
         begin
           read_link_data (cur_page, read_page);
           end_page = cur_page;
-          //return_page (cur_page);
           cur_page = read_page;
           pgcount = pgcount + 1;
         end
 
       return_page (start_page, end_page);
 
-      $display ("%t: %m: LLWRPORT: Read packet %0d with %0d pages", $time, packets, pgcount);
+      $display ("%t: %m: LLWRPORT: Read packet %0d [%0d,%0d] with %0d pages", 
+                $time, packets, start_page, end_page, pgcount);
       packets = packets + 1;
 
       // wait 1-10 cycles
@@ -142,7 +143,11 @@ module llwrport
       repeat (wait_cyc) @(posedge clk);
     end // block: wrportloop
 
-       
+  always @(launch)
+    begin
+      repeat (4) @(posedge clk);
+      ->bench.free_list;
+    end
   
 endmodule // llwrport
 
