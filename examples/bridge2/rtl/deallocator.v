@@ -23,7 +23,7 @@ module deallocator
    // page dereference interface
    output reg           drf_srdy,
    input                drf_drdy,
-   output [`LL_PG_ASZ*2-1:0]  drf_page_list
+   output [`LL_PG_ASZ*2-1:0]  drf_page_list,
 
    // interface to packet buffer
    output  [`PBR_SZ-1:0] pbrd_data,
@@ -95,6 +95,7 @@ module deallocator
       rlp_srdy = 0;
       rlpr_drdy = 0;
       drf_srdy = 0;
+      pbrd_srdy = 0;
 
       case (state)
         s_idle :

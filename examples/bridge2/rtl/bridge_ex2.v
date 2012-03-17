@@ -68,10 +68,7 @@ module bridge_ex2
   wire [`PBR_SZ-1:0]    pbrd_data_3;            // From p3 of port_macro.v
   wire [3:0]            pbrd_drdy;              // From pktbuf of packet_buffer.v
   wire [3:0]            pbrd_srdy;              // From p0 of port_macro.v, ...
-  wire [`PFW_SZ-1:0]    pbrr_data_0;            // From pktbuf of packet_buffer.v
-  wire [`PFW_SZ-1:0]    pbrr_data_1;            // From pktbuf of packet_buffer.v
-  wire [`PFW_SZ-1:0]    pbrr_data_2;            // From pktbuf of packet_buffer.v
-  wire [`PFW_SZ-1:0]    pbrr_data_3;            // From pktbuf of packet_buffer.v
+  wire [`PFW_SZ-1:0]    pbrr_data;              // From pktbuf of packet_buffer.v
   wire [3:0]            pbrr_drdy;              // From p0 of port_macro.v, ...
   wire [3:0]            pbrr_srdy;              // From pktbuf of packet_buffer.v
   wire [(`PAR_DATA_SZ)+(`LL_PG_ASZ*2)-1:0] pm2f_data_0;// From p0 of port_macro.v
@@ -81,7 +78,7 @@ module bridge_ex2
   wire [`NUM_PORTS-1:0] pm2f_drdy;              // From control0 of control_pipe.v
   wire [3:0]            pm2f_srdy;              // From p0 of port_macro.v, ...
   wire [(`NUM_PORTS)-1:0] rlp_drdy;             // From control0 of control_pipe.v
-  wire [15:0]           rlp_rd_page;            // From p0 of port_macro.v, ...
+  wire [47:0]           rlp_rd_page;            // From p0 of port_macro.v, ...
   wire [3:0]            rlp_srdy;               // From p0 of port_macro.v, ...
   wire [(`LL_PG_ASZ+1)-1:0] rlpr_data;          // From control0 of control_pipe.v
   wire [3:0]            rlpr_drdy;              // From p0 of port_macro.v, ...
@@ -113,11 +110,12 @@ module bridge_ex2
    .rlpr_srdy  (rlpr_srdy[@]),
    .rlpr_drdy  (rlpr_drdy[@]),
    .rlpr_data  (rlpr_data[`LL_PG_ASZ:0]),
+   .pbrr_data  (pbrr_data[`PFW_SZ-1:0]),
    // page size is 12 bits, use 24 bits for each drf port, 25 bits for link port
    .drf_page_list                       (drf_page_list[@"(- (* (+ @ 1) 24) 1)":@"(* @ 24)"]),
    .lnp_pnp                           (lnp_pnp[@"(- (* (+ @ 1) 25) 1)":@"(* @ 25)"]),
-   // max ref count is 4 bits
-   .rlp_rd_page                       (rlp_rd_page[@"(- (* (+ @ 1) 4) 1)":@"(* @ 4)"]),
+   // page address size is 12 bits
+   .rlp_rd_page                       (rlp_rd_page[@"(- (* (+ @ 1) 12) 1)":@"(* @ 12)"]),
    .pm2f_srdy (pm2f_srdy[@]),
    .pm2f_drdy (pm2f_drdy[@]),
    .pbra_srdy (pbra_srdy[@]),
@@ -148,7 +146,7 @@ module bridge_ex2
      .pbrr_drdy                         (pbrr_drdy[0]),          // Templated
      .pm2f_data                         (pm2f_data_0[(`PAR_DATA_SZ)+(`LL_PG_ASZ*2)-1:0]), // Templated
      .pm2f_srdy                         (pm2f_srdy[0]),          // Templated
-     .rlp_rd_page                       (rlp_rd_page[3:0]),      // Templated
+     .rlp_rd_page                       (rlp_rd_page[11:0]),     // Templated
      .rlp_srdy                          (rlp_srdy[0]),           // Templated
      .rlpr_drdy                         (rlpr_drdy[0]),          // Templated
      // Inputs
@@ -166,7 +164,7 @@ module bridge_ex2
      .parr_srdy                         (parr_srdy[0]),          // Templated
      .pbra_drdy                         (pbra_drdy[0]),          // Templated
      .pbrd_drdy                         (pbrd_drdy[0]),          // Templated
-     .pbrr_data                         (pbrr_data_0[`PFW_SZ-1:0]), // Templated
+     .pbrr_data                         (pbrr_data[`PFW_SZ-1:0]), // Templated
      .pbrr_srdy                         (pbrr_srdy[0]),          // Templated
      .pm2f_drdy                         (pm2f_drdy[0]),          // Templated
      .rlp_drdy                          (rlp_drdy[0]),           // Templated
@@ -192,7 +190,7 @@ module bridge_ex2
      .pbrr_drdy                         (pbrr_drdy[1]),          // Templated
      .pm2f_data                         (pm2f_data_1[(`PAR_DATA_SZ)+(`LL_PG_ASZ*2)-1:0]), // Templated
      .pm2f_srdy                         (pm2f_srdy[1]),          // Templated
-     .rlp_rd_page                       (rlp_rd_page[7:4]),      // Templated
+     .rlp_rd_page                       (rlp_rd_page[23:12]),    // Templated
      .rlp_srdy                          (rlp_srdy[1]),           // Templated
      .rlpr_drdy                         (rlpr_drdy[1]),          // Templated
      // Inputs
@@ -210,7 +208,7 @@ module bridge_ex2
      .parr_srdy                         (parr_srdy[1]),          // Templated
      .pbra_drdy                         (pbra_drdy[1]),          // Templated
      .pbrd_drdy                         (pbrd_drdy[1]),          // Templated
-     .pbrr_data                         (pbrr_data_1[`PFW_SZ-1:0]), // Templated
+     .pbrr_data                         (pbrr_data[`PFW_SZ-1:0]), // Templated
      .pbrr_srdy                         (pbrr_srdy[1]),          // Templated
      .pm2f_drdy                         (pm2f_drdy[1]),          // Templated
      .rlp_drdy                          (rlp_drdy[1]),           // Templated
@@ -236,7 +234,7 @@ module bridge_ex2
      .pbrr_drdy                         (pbrr_drdy[2]),          // Templated
      .pm2f_data                         (pm2f_data_2[(`PAR_DATA_SZ)+(`LL_PG_ASZ*2)-1:0]), // Templated
      .pm2f_srdy                         (pm2f_srdy[2]),          // Templated
-     .rlp_rd_page                       (rlp_rd_page[11:8]),     // Templated
+     .rlp_rd_page                       (rlp_rd_page[35:24]),    // Templated
      .rlp_srdy                          (rlp_srdy[2]),           // Templated
      .rlpr_drdy                         (rlpr_drdy[2]),          // Templated
      // Inputs
@@ -254,7 +252,7 @@ module bridge_ex2
      .parr_srdy                         (parr_srdy[2]),          // Templated
      .pbra_drdy                         (pbra_drdy[2]),          // Templated
      .pbrd_drdy                         (pbrd_drdy[2]),          // Templated
-     .pbrr_data                         (pbrr_data_2[`PFW_SZ-1:0]), // Templated
+     .pbrr_data                         (pbrr_data[`PFW_SZ-1:0]), // Templated
      .pbrr_srdy                         (pbrr_srdy[2]),          // Templated
      .pm2f_drdy                         (pm2f_drdy[2]),          // Templated
      .rlp_drdy                          (rlp_drdy[2]),           // Templated
@@ -280,7 +278,7 @@ module bridge_ex2
      .pbrr_drdy                         (pbrr_drdy[3]),          // Templated
      .pm2f_data                         (pm2f_data_3[(`PAR_DATA_SZ)+(`LL_PG_ASZ*2)-1:0]), // Templated
      .pm2f_srdy                         (pm2f_srdy[3]),          // Templated
-     .rlp_rd_page                       (rlp_rd_page[15:12]),    // Templated
+     .rlp_rd_page                       (rlp_rd_page[47:36]),    // Templated
      .rlp_srdy                          (rlp_srdy[3]),           // Templated
      .rlpr_drdy                         (rlpr_drdy[3]),          // Templated
      // Inputs
@@ -298,7 +296,7 @@ module bridge_ex2
      .parr_srdy                         (parr_srdy[3]),          // Templated
      .pbra_drdy                         (pbra_drdy[3]),          // Templated
      .pbrd_drdy                         (pbrd_drdy[3]),          // Templated
-     .pbrr_data                         (pbrr_data_3[`PFW_SZ-1:0]), // Templated
+     .pbrr_data                         (pbrr_data[`PFW_SZ-1:0]), // Templated
      .pbrr_srdy                         (pbrr_srdy[3]),          // Templated
      .pm2f_drdy                         (pm2f_drdy[3]),          // Templated
      .rlp_drdy                          (rlp_drdy[3]),           // Templated
@@ -347,10 +345,7 @@ module bridge_ex2
      .pbra_drdy                         (pbra_drdy[3:0]),
      .pbrd_drdy                         (pbrd_drdy[3:0]),
      .pbrr_srdy                         (pbrr_srdy[3:0]),
-     .pbrr_data_0                       (pbrr_data_0[`PFW_SZ-1:0]),
-     .pbrr_data_1                       (pbrr_data_1[`PFW_SZ-1:0]),
-     .pbrr_data_2                       (pbrr_data_2[`PFW_SZ-1:0]),
-     .pbrr_data_3                       (pbrr_data_3[`PFW_SZ-1:0]),
+     .pbrr_data                         (pbrr_data[`PFW_SZ-1:0]),
      // Inputs
      .clk                               (clk),
      .reset                             (reset),

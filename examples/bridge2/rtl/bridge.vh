@@ -46,7 +46,7 @@
 `define PRW_DATA     63:0      // 64 bits of packet data
 `define PRW_PCC      65:64     // packet control code
 `define PRW_VALID    68:66     // # of valid bytes modulo 8
-`define PFW_SZ 69
+`define PFW_SZ       69
 
 // Port FIFO sizes
 `define RX_FIFO_DEPTH 256
@@ -69,14 +69,15 @@
 
 // Packet buffer size
 `define PB_LINES_PER_PAGE 4
-`define PB_ASZ       $clog2(`LL_PAGES*PB_LINES_PER_PAGE)
+`define PB_DEPTH     (`LL_PAGES*`PB_LINES_PER_PAGE)
+`define PB_ASZ       $clog2(`PB_DEPTH)
 
 // Packet buffer request structure
-`define PBR_DATA     63:0    // only valid for writes
-`define PBR_ADDR     77:64
-`define PBR_WRITE    78
-`define PBR_PORT     82:79   // only valid for reads
-`define PBR_SZ       83
+`define PBR_DATA     68:0    // only valid for writes
+`define PBR_ADDR     82:69
+`define PBR_WRITE    83
+`define PBR_PORT     87:84   // only valid for reads
+`define PBR_SZ       88
 
 // GMII definitions
 `define GMII_PRE     8'h55

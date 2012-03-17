@@ -109,7 +109,9 @@ module port_macro
  );
  */
   sd_rx_gigmac rx_gigmac
-    (/*AUTOINST*/
+    (
+     .cfg_check_crc (1'b0),
+     /*AUTOINST*/
      // Outputs
      .rxg_srdy                          (rxc_rxg_srdy),          // Templated
      .rxg_code                          (rxc_rxg_code[1:0]),     // Templated
@@ -149,7 +151,8 @@ module port_macro
      .p_drdy                            (rxg_drdy));              // Templated
 
   pkt_parse #(port_num) pkt_parse
-    (/*AUTOINST*/
+    (
+     /*AUTOINST*/
      // Outputs
      .rxg_drdy                          (rxg_drdy),
      .p2f_srdy                          (p2f_srdy),

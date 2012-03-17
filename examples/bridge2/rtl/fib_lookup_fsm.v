@@ -1,10 +1,10 @@
 module fib_lookup_fsm
   (/*AUTOARG*/
   // Outputs
-  lpp_drdy, ft_wdata, ft_rd_en, ft_wr_en, ft_addr, lout_data,
-  lout_srdy, lout_dst_vld,
+  lpp_drdy, ft_wdata, ft_rd_en, ft_wr_en, ft_addr, lout_start,
+  lout_srdy, lout_dst_vld, refup_srdy, refup_page, refup_count,
   // Inputs
-  clk, reset, lpp_data, lpp_srdy, ft_rdata, lout_drdy
+  clk, reset, lpp_data, lpp_srdy, ft_rdata, lout_drdy, refup_drdy
   );
 
   input clk, reset;
@@ -38,7 +38,7 @@ module fib_lookup_fsm
   
   assign source_port_mask = 1 << lpp_data[`PAR_SRCPORT];
 
-  assign refup_count = count_bits (lout_data);
+  assign refup_count = count_bits (lout_dst_vld);
   assign refup_page  = lpp_data[`A2F_STARTPG];
   assign lout_start  = lpp_data[`A2F_STARTPG];
   

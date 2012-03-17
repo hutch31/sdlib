@@ -20,7 +20,9 @@ module sd_rx_gigmac
    output       rxg_srdy,
    input        rxg_drdy,
    output [1:0] rxg_code,
-   output [7:0] rxg_data
+   output [7:0] rxg_data,
+
+   input        cfg_check_crc
    );
 
   reg 		rxdv1, rxdv2;
@@ -155,7 +157,7 @@ module sd_rx_gigmac
           begin
             ic_srdy =1;
             ic_data = pkt_crc[31:24];
-            if (pkt_crc == crc)
+            if ((pkt_crc == crc) | !cfg_check_crc)
               begin
                 ic_code = `PCC_EOP;
               end

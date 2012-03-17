@@ -26,7 +26,7 @@ module sd_ajoin2
   #(parameter c1_width=8,
     parameter c2_width=8)
   (
-   input              clk; 
+   input              clk,
    input              reset,
   
    input              c1_srdy,
