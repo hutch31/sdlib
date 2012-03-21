@@ -173,9 +173,10 @@ module deallocator
           state <= s_idle;
           /*AUTORESET*/
           // Beginning of autoreset for uninitialized flops
-          cur <= {`LL_PG_ASZ{1'b0}};
+          cur <= {(1+(`LL_PG_ASZ-1)){1'b0}};
+          eop_seen <= 1'h0;
           lcount <= 2'h0;
-          start <= {`LL_PG_ASZ{1'b0}};
+          start <= {(1+(`LL_PG_ASZ-1)){1'b0}};
           // End of automatics
         end
       else

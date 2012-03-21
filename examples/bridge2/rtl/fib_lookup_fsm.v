@@ -23,7 +23,7 @@ module fib_lookup_fsm
   input                           lout_drdy;
   output reg [`NUM_PORTS-1:0]     lout_dst_vld;
   
-  output reg                      refup_srdy;
+  output                          refup_srdy;
   input                           refup_drdy;
   output [`LL_PG_ASZ-1:0]         refup_page;
   output [`LL_REFSZ-1:0]          refup_count;
@@ -35,11 +35,13 @@ module fib_lookup_fsm
 
   reg [`FIB_ASZ-1:0]              init_ctr, nxt_init_ctr;
   reg [4:0]                       state, nxt_state;
-  
+  reg                             lrefup_srdy;
+  reg [`LL_REFSZ-1:0]             lrefup_count;
+
   assign source_port_mask = 1 << lpp_data[`PAR_SRCPORT];
 
-  assign refup_count = count_bits (lout_dst_vld);
-  assign refup_page  = lpp_data[`A2F_STARTPG];
+  //assign lrefup_count = count_bits (lout_dst_vld);
+  //assign refup_page  = lpp_data[`A2F_STARTPG];
   assign lout_start  = lpp_data[`A2F_STARTPG];
   
   function [`LL_REFSZ-1:0] count_bits;
@@ -52,6 +54,15 @@ module fib_lookup_fsm
       count_bits = count;
     end
   endfunction // for
+
+  sd_iohalf #(.width(`LL_PG_ASZ+`LL_REFSZ)) refup_buf
+    (.clk (clk), .reset (reset),
+     .c_srdy (lrefup_srdy),
+     .c_drdy (lrefup_drdy),
+     .c_data ({lrefup_count, lpp_data[`A2F_STARTPG]}),
+     .p_srdy (refup_srdy),
+     .p_drdy (refup_drdy),
+     .p_data ({refup_count, refup_page}));
   
   basic_hashfunc #(48, `FIB_ENTRIES) hashfunc
     (
@@ -86,6 +97,7 @@ module fib_lookup_fsm
       lout_srdy = 0;
       lpp_drdy = 0;
       nxt_init_ctr = init_ctr;
+      lrefup_srdy = 0;
       
       case (1'b1)
         state[s_idle] :
@@ -141,8 +153,8 @@ module fib_lookup_fsm
             ft_wdata[`FIB_PORT] = lpp_data[`PAR_SRCPORT];
             nxt_state = ns_idle;
 
-            refup_srdy = 1;
-            if (refup_drdy)
+            lrefup_srdy = 1;
+            if (lrefup_drdy)
               begin
                 nxt_state = ns_idle;
                 lpp_drdy = 1;
@@ -153,8 +165,8 @@ module fib_lookup_fsm
 
         state[s_wait_refup] :
           begin
-            refup_srdy = 1;
-            if (refup_drdy)
+            lrefup_srdy = 1;
+            if (lrefup_drdy)
               begin
                 nxt_state = ns_idle;
                 lpp_drdy = 1;
@@ -188,11 +200,14 @@ module fib_lookup_fsm
         begin
           init_ctr <= #1 0;
           state    <= #1 ns_init0;
+          lrefup_count <= #1 0;
         end
       else
         begin
           init_ctr <= #1 nxt_init_ctr;
           state    <= #1 nxt_state;
+          if (lout_srdy)
+            lrefup_count <= #1 count_bits (lout_dst_vld);
         end
     end
 

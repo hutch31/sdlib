@@ -42,7 +42,7 @@ module packet_buffer
               .fast_arb                 (1)) fib_arb
     (
      // Outputs
-     .p_data                            (pbi_data[(`PBR_SZ)-1:0]),
+     .p_data                            (pbi_data[`PBR_SZ-1:0]),
      .p_grant                           (pbi_grant[(`NUM_PORTS*2)-1:0]),
      .p_srdy                            (pbi_srdy),
      // Inputs

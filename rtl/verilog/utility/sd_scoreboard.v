@@ -72,13 +72,13 @@ module sd_scoreboard
     begin : no_txid_and_mask
       assign c_hold_data = {c_req_type,c_itemid,c_mask,c_data};
       assign {ip_req_type,ip_itemid,ip_mask,ip_data} = p_hold_data;
-      assign ip_mask = 0;
+      assign ip_txid = 0;
     end
   else if ((use_txid == 1) && (use_mask == 0))
     begin : txid_and_no_mask
       assign c_hold_data = {c_txid,c_req_type,c_itemid,c_data};
       assign {ip_txid,ip_req_type,ip_itemid,ip_data} = p_hold_data;
-      assign ip_txid = 0;
+      assign ip_mask = 0;
     end
   else if ((use_txid == 0) && (use_mask == 0))
     begin : no_txid_no_mask
