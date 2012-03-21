@@ -224,7 +224,7 @@ module port_macro
 
 /* sd_ajoin2 AUTO_TEMPLATE
  (
-   .c2_data                     ({a2f_start,a2f_end}),
+   .c2_data                     ({a2f_end,a2f_start}),
    .c1_\(.*\)			(p2f_\1[]),
    .c2_\(.*\)			(a2f_\1[]),
    .p_\(.*\)			(pm2f_\1[]),
@@ -243,7 +243,7 @@ module port_macro
      .c1_srdy                           (p2f_srdy),              // Templated
      .c1_data                           (p2f_data[(`PAR_DATA_SZ)-1:0]), // Templated
      .c2_srdy                           (a2f_srdy),              // Templated
-     .c2_data                           ({a2f_start,a2f_end}),   // Templated
+     .c2_data                           ({a2f_end,a2f_start}),   // Templated
      .p_drdy                            (pm2f_drdy));             // Templated
 
   deallocator dealloc

@@ -84,6 +84,14 @@ module deallocator
   localparam s_idle = 0, s_fetch = 1, s_link = 2, s_link_reply = 3,
     s_return = 4;
 
+  always @(posedge clk)
+    begin
+      if (f2d_srdy & f2d_drdy)
+        $display ("%t %m: Dealloc packet %0d", $time, f2d_data);
+      if (drf_srdy & drf_drdy)
+        $display ("%t %m: Returning packet (%0d,%0d)", $time, start, cur);
+    end
+
   always @*
     begin
       f2d_drdy = 0;
@@ -107,6 +115,7 @@ module deallocator
                 nxt_cur   = f2d_data;
                 nxt_state = s_fetch;
                 nxt_eop_seen = 0;
+                nxt_lcount = 0;
               end
           end
 

@@ -89,6 +89,14 @@ module allocator
      .p_drdy   (pp_drdy),
      .p_data   (pp_page));
 
+  always @(posedge clk)
+    begin
+      if (pp_srdy & pp_drdy)
+        $display ("%t %m: Storing in page %0d", $time, pp_page);
+      if (crx_srdy & crx_drdy & crx_commit)
+        $display ("%t %m: Sent packet (%0d,%0d)", $time, start_pg, cur_pg);
+    end
+
   //------------------------------------------------------------
   // 
   //------------------------------------------------------------
