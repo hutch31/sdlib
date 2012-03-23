@@ -1,0 +1,15 @@
+#!/bin/bash
+
+TESTNAME=$1
+shift
+
+which iverilog &> /dev/null
+if [ "$?" == "0" ]; then
+ rm -f a.out
+ iverilog -o bridge_ex2 -f bridge.vf tests/$TESTNAME.v $* | tee compile.log
+ #./bridge_ex2 -lxt2 | tee run.log
+ ./bridge_ex2 -lxt2
+else
+ vcs -full64 +v2k -R -I -f bridge.vf tests/$TESTNAME.v $*
+fi
+

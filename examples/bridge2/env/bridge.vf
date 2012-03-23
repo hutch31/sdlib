@@ -1,0 +1,31 @@
+../rtl/bridge.vh
+
+env_top.v
+gmii_driver.v
+gmii_monitor.v
+tape_record.v
+
+../rtl/bridge_ex2.v
+../rtl/allocator.v
+../rtl/basic_hashfunc.v
+../rtl/concentrator.v
+../rtl/control_pipe.v
+../rtl/deallocator.v
+../rtl/distributor.v
+../rtl/egr_oflow.v
+../rtl/fib_lookup_fsm.v
+../rtl/fib_lookup.v
+../rtl/mac_crc32.v
+../rtl/packet_buffer.v
+../rtl/pkt_parse.v
+../rtl/port_clocking.v
+../rtl/port_macro.v
+../rtl/sd_rx_gigmac.v
+../rtl/sd_tx_gigmac.v
+
++libext+.v
+-y ../../../rtl/verilog/buffers
+-y ../../../rtl/verilog/closure
+-y ../../../rtl/verilog/forks
+-y ../../../rtl/verilog/memory
+-y ../../../rtl/verilog/utility
