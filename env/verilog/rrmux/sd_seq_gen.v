@@ -25,7 +25,7 @@ module sd_seq_gen
    input reset,
    output reg     p_srdy,
    input          p_drdy,
-   output reg [width-1:0] p_data);
+   output     [width-1:0] p_data);
 
   reg 			  nxt_p_srdy;
   reg [width-1:0] 	  nxt_p_data;
@@ -115,14 +115,16 @@ module sd_seq_gen
       if (reset)
 	begin
 	  p_srdy <= `SDLIB_DELAY 0;
-	  p_data <= `SDLIB_DELAY 0;
+	  //p_data <= `SDLIB_DELAY 0;
 	end
       else
 	begin
 	  p_srdy <= `SDLIB_DELAY nxt_p_srdy;
-	  p_data <= `SDLIB_DELAY nxt_p_data;
+	  //p_data <= `SDLIB_DELAY nxt_p_data;
 	end
     end // always @ (posedge clk)
+
+  assign p_data = (x_inval & ~p_srdy) ? {width{1'bx}} : { tag_val, icount };
 
   // simple blocking task to send N words and then wait until complete
   task send;

@@ -46,32 +46,29 @@ module sd_mirror
    output reg [width-1:0]  p_data
    );
 
-  reg 			 state, nxt_state;
   reg [mirror-1:0] 	 nxt_p_srdy;
   reg                    load;
+  wire                   nxt_accept;
  
   always @(posedge clk)
-    if (load)
+    if (nxt_accept)
       p_data <= `SDLIB_DELAY c_data;
 
-  assign c_drdy = (p_srdy == 0);
+  //assign c_drdy = (p_srdy == 0);
+  assign c_drdy = nxt_accept;
+  assign nxt_accept = (p_srdy == 0) | ((p_srdy != 0) && ((p_srdy & p_drdy) == p_srdy));
 
   always @*
     begin
       nxt_p_srdy = p_srdy;
-      load         = 0;
       
-      if (p_srdy == {mirror{1'b0}})
-          begin
-	    if (c_srdy)
-	      begin
-                if (c_dst_vld == {mirror{1'b0}})
-                  nxt_p_srdy = {mirror{1'b1}};
-                else
-	          nxt_p_srdy = c_dst_vld;
-                load         = 1;
-	      end
-          end
+      if (nxt_accept)
+        begin
+          if (c_dst_vld == {mirror{1'b0}})
+            nxt_p_srdy = {mirror{c_srdy}};
+          else
+            nxt_p_srdy = {mirror{c_srdy}} & c_dst_vld;
+        end
       else
 	begin
 	  nxt_p_srdy = p_srdy & ~p_drdy;
@@ -83,12 +80,10 @@ module sd_mirror
       if (reset)
 	begin
 	  p_srdy   <= `SDLIB_DELAY {mirror{1'b0}};
-	  state    <= `SDLIB_DELAY 1'b0;
 	end
       else
 	begin
 	  p_srdy   <= `SDLIB_DELAY nxt_p_srdy;
-	  state    <= `SDLIB_DELAY nxt_state;
 	end
     end
 
