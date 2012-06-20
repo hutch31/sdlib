@@ -1,0 +1,11 @@
+Srdy-Drdy Library
+=================
+Guy Hutchison <ghutchis@gmail.com>
+:Author Initials: GTH
+
+The Srdy-Drdy library is an interface standard for connecting RTL blocks together
+in an FPGA and ASIC with a unidirectional interface that provides bidirectional
+flow control.  The library is also a set of components which are compliant to the
+interface definition and provide a variety of functions from basic timing closure
+to buffering and arbitration between blocks.
+
