@@ -5,15 +5,37 @@ module stupid_mon
    input        clk,
    input        reset,
    input        c_srdy,
-   output       c_drdy,
+   output reg      c_drdy,
    input [width-1:0] c_data
    );
   
+  import "DPI-C" function void addDpiDriverData (input integer driverId, input integer data);
+  import "DPI-C" function real getTargetRate (input integer driverId);
+  real                    actualRate;
+  
   always @(posedge clk)
     begin
-      if (c_srdy)
-        $display ("Rcv [%02d]: %x", id, c_data);
+      if (reset)
+        begin
+          c_drdy <= 0;
+          actualRate = 1.0;
+        end
+      else
+        begin
+          actualRate = actualRate * 0.9;
+
+          if (c_srdy & c_drdy)
+            begin
+              actualRate += 0.1;
+              addDpiDriverData (id, c_data);
+            end
+
+          if (actualRate > getTargetRate(id))
+            c_drdy <= 0;
+          else
+            c_drdy <= 1;
+          
+        end
     end
-  assign c_drdy = 1;
 
 endmodule // stupid_mon

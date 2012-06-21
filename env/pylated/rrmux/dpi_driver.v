@@ -24,9 +24,6 @@ module dpi_driver
 
   import "DPI-C" function integer getDpiDriverData (input integer driverId);
   import "DPI-C" function real getTargetRate (input integer driverId);
-  
-  //export "DPI-C" task getTargetRate;
-  //export "DPI-C" task setTargetRate;
 
   real                    actualRate;
   integer data;

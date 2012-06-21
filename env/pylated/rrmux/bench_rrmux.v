@@ -13,12 +13,6 @@ module bench_rrmux (input clk, input reset);
   wire [3:0]            out_srdy;               // From mirror of sd_mirror.v
   // End of automatics
 
-  initial 
-    begin 
-      $display("Starting simulation"); 
-    end
-
-  
 /* dpi_driver AUTO_TEMPLATE
  (
      .width (8),
@@ -152,7 +146,7 @@ module bench_rrmux (input clk, input reset);
 /* stupid_mon AUTO_TEMPLATE
  (
      .width (8),
-     .id (@),
+     .id (@+4),
      .c_srdy                            (out_srdy[@]),
      .c_drdy                            (out_drdy[@]),
      .c_data                            (out_data[7:0]),
@@ -161,7 +155,7 @@ module bench_rrmux (input clk, input reset);
   stupid_mon #(/*AUTOINSTPARAM*/
                // Parameters
                .width                   (8),                     // Templated
-               .id                      (0))                     // Templated
+               .id                      (0+4))                   // Templated
   check0
       (/*AUTOINST*/
        // Outputs
@@ -175,7 +169,7 @@ module bench_rrmux (input clk, input reset);
   stupid_mon #(/*AUTOINSTPARAM*/
                // Parameters
                .width                   (8),                     // Templated
-               .id                      (1))                     // Templated
+               .id                      (1+4))                   // Templated
     check1
       (/*AUTOINST*/
        // Outputs
@@ -189,7 +183,7 @@ module bench_rrmux (input clk, input reset);
   stupid_mon #(/*AUTOINSTPARAM*/
                // Parameters
                .width                   (8),                     // Templated
-               .id                      (2))                     // Templated
+               .id                      (2+4))                   // Templated
     check2
       (/*AUTOINST*/
        // Outputs
@@ -203,7 +197,7 @@ module bench_rrmux (input clk, input reset);
   stupid_mon #(/*AUTOINSTPARAM*/
                // Parameters
                .width                   (8),                     // Templated
-               .id                      (3))                     // Templated
+               .id                      (3+4))                   // Templated
     check3
       (/*AUTOINST*/
        // Outputs
