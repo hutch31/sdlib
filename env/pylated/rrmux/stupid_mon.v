@@ -22,11 +22,11 @@ module stupid_mon
         end
       else
         begin
-          actualRate = actualRate * 0.9;
+          actualRate = actualRate * 0.95;
 
           if (c_srdy & c_drdy)
             begin
-              actualRate += 0.1;
+              actualRate += 0.05;
               addDpiDriverData (id, c_data);
             end
 

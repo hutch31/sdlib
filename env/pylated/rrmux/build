@@ -15,7 +15,7 @@ libdirs = ["../../../rtl/verilog/forks","../../../rtl/verilog/buffers","../../..
 basename = "bench_rrmux"
 
 def verilate (basename, libdirs):
-    cmd = "verilator -CFLAGS -fPIC -DSDLIB_CLOCKING=\"posedge clk\" -DSDLIB_DELAY=\"\" -Wall --cc %s.v" % basename
+    cmd = "verilator -CFLAGS -fPIC -DSDLIB_CLOCKING=\"posedge clk\" -DSDLIB_DELAY=\"\" -Wall --trace --cc %s.v" % basename
     for lib in libdirs:
         cmd += " -y %s" % lib
 
@@ -29,7 +29,7 @@ def verilate (basename, libdirs):
 #cd ..
 
 verilate (basename,libdirs)
-cfiles = ['sim_launch.cpp','sim_launch_wrap.c',os.environ['VERILATOR_ROOT']+'/share/verilator/include/verilated.cpp']
+cfiles = ['sim_launch.cpp','sim_launch_wrap.c',os.environ['VERILATOR_ROOT']+'/share/verilator/include/verilated.cpp',os.environ['VERILATOR_ROOT']+'/share/verilator/include/verilated_vcd_c.cpp']
 
 os.system ('swig -python sim_launch.i')
 #g++ -fPIC -c sim_launch.cpp    $INCLUDES
@@ -39,7 +39,7 @@ os.system ('swig -python sim_launch.i')
 for cfile in cfiles:
     os.system ("g++ -fPIC -c %s %s" % (cfile,includes))
 
-os.system ("g++ -shared sim_launch.o sim_launch_wrap.o verilated.o obj_dir/V%s__ALL.a -o _vlaunch.so" % basename)
+os.system ("g++ -shared sim_launch.o sim_launch_wrap.o verilated.o verilated_vcd_c.o obj_dir/V%s__ALL.a -o _vlaunch.so" % basename)
 
 #python pytest.py
 
