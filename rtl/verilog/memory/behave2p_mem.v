@@ -4,6 +4,11 @@
 // This block is uncopyrighted and released into the public domain.
 //----------------------------------------------------------------------
 
+// delay unit for nonblocking assigns, default is to #1
+`ifndef SDLIB_DELAY 
+ `define SDLIB_DELAY #1 
+`endif
+
 module behave2p_mem
   #(parameter width=8,
     parameter depth=256,
@@ -29,7 +34,7 @@ module behave2p_mem
     begin
       if (wr_en)
         begin
-          array[wr_addr] <= #1 d_in;
+          array[wr_addr] <= `SDLIB_DELAY d_in;
         end
     end
 
@@ -37,7 +42,7 @@ module behave2p_mem
     begin
       if (rd_en)
         begin
-          r_addr <= #1 rd_addr;
+          r_addr <= `SDLIB_DELAY rd_addr;
         end
     end // always @ (posedge clk)
 

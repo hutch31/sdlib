@@ -42,21 +42,13 @@ module sd_fifo_s
 
   localparam asz = $clog2(depth);
 
-  reg [width-1:0] 	mem [0:depth-1];
-  wire [width-1:0] 	mem_rddata;
-  wire 			rd_en;
-  wire [asz:0] 		rdptr_tail, rdptr_tail_sync;
-  wire			wr_en;
-  wire [asz:0] 		wrptr_head, wrptr_head_sync;
-  wire [asz-1:0] 	rd_addr, wr_addr;
+  reg [width-1:0]       mem [0:depth-1];
+  wire                  rd_en;
+  wire [asz:0]          rdptr_tail, rdptr_tail_sync;
+  wire                  wr_en;
+  wire [asz:0]          wrptr_head, wrptr_head_sync;
+  wire [asz-1:0]        rd_addr, wr_addr;
 
-/* -----\/----- EXCLUDED -----\/-----
-  always @(posedge c_clk)
-    if (wr_en)
-      mem[wr_addr] <= `SDLIB_DELAY c_data;
-
-  assign mem_rddata = mem[rd_addr];
- -----/\----- EXCLUDED -----/\----- */
   behave2p_mem #(width, depth) mem2p
     (.d_out (p_data),
      .wr_en (wr_en),
@@ -71,63 +63,55 @@ module sd_fifo_s
   sd_fifo_head_s #(depth, async) head
     (
      // Outputs
-     .c_drdy				(c_drdy),
-     .wrptr_head			(wrptr_head),
-     .wr_en				(wr_en),
+     .c_drdy                            (c_drdy),
+     .wrptr_head                        (wrptr_head),
+     .wr_en                             (wr_en),
      .wr_addr                           (wr_addr),
      // Inputs
-     .clk				(c_clk),
-     .reset				(c_reset),
-     .c_srdy				(c_srdy),
-     .rdptr_tail			(rdptr_tail_sync));
+     .clk                               (c_clk),
+     .reset                             (c_reset),
+     .c_srdy                            (c_srdy),
+     .rdptr_tail                        (rdptr_tail_sync));
 
   sd_fifo_tail_s #(depth, async) tail
     (
      // Outputs
-     .rdptr_tail			(rdptr_tail),
-     .rd_en				(rd_en),
+     .rdptr_tail                        (rdptr_tail),
+     .rd_en                             (rd_en),
      .rd_addr                           (rd_addr),
-     .p_srdy				(p_srdy),
+     .p_srdy                            (p_srdy),
      // Inputs
-     .clk				(p_clk),
-     .reset				(p_reset),
-     .wrptr_head			(wrptr_head_sync),
-     .p_drdy				(p_drdy));
-
-/* -----\/----- EXCLUDED -----\/-----
-  always @(posedge p_clk)
-    begin
-      if (rd_en)
-	p_data <= `SDLIB_DELAY mem_rddata;
-    end
- -----/\----- EXCLUDED -----/\----- */
+     .clk                               (p_clk),
+     .reset                             (p_reset),
+     .wrptr_head                        (wrptr_head_sync),
+     .p_drdy                            (p_drdy));
 
   generate
     if (async)
       begin : gen_sync
-	reg [asz:0] r_sync1, r_sync2;
-	reg [asz:0] w_sync1, w_sync2;
+        reg [asz:0] r_sync1, r_sync2;
+        reg [asz:0] w_sync1, w_sync2;
 
-	always @(posedge p_clk)
-	  begin
-	    w_sync1 <= `SDLIB_DELAY wrptr_head;
-	    w_sync2 <= `SDLIB_DELAY w_sync1;
-	  end
+        always @(posedge p_clk)
+          begin
+            w_sync1 <= `SDLIB_DELAY wrptr_head;
+            w_sync2 <= `SDLIB_DELAY w_sync1;
+          end
 
-	always @(posedge c_clk)
-	  begin
-	    r_sync1 <= `SDLIB_DELAY rdptr_tail;
-	    r_sync2 <= `SDLIB_DELAY r_sync1;
-	  end
+        always @(posedge c_clk)
+          begin
+            r_sync1 <= `SDLIB_DELAY rdptr_tail;
+            r_sync2 <= `SDLIB_DELAY r_sync1;
+          end
 
-	assign wrptr_head_sync = w_sync2;
-	assign rdptr_tail_sync = r_sync2;
+        assign wrptr_head_sync = w_sync2;
+        assign rdptr_tail_sync = r_sync2;
       end
     else
       begin : gen_nosync
-	assign wrptr_head_sync = wrptr_head;
-	assign rdptr_tail_sync = rdptr_tail;
+        assign wrptr_head_sync = wrptr_head;
+        assign rdptr_tail_sync = rdptr_tail;
       end
-  endgenerate	
+  endgenerate   
 
 endmodule // sd_fifo_s

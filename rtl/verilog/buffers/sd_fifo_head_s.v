@@ -42,10 +42,10 @@ module sd_fifo_head_s
 
      );
 
-  reg [asz:0] 		wrptr, nxt_wrptr;
-  reg [asz:0] 		wrptr_p1;
-  reg 			empty, full;
-  wire [asz:0] 		rdptr;
+  reg [asz:0]           wrptr, nxt_wrptr;
+  reg [asz:0]           wrptr_p1;
+  reg                   full;
+  wire [asz:0]          rdptr;
 
   assign c_drdy = !full;
   assign wr_addr = wrptr[asz-1:0];
@@ -55,12 +55,12 @@ module sd_fifo_head_s
       wrptr_p1 = wrptr + 1;
       
       full = ((wrptr[asz-1:0] == rdptr[asz-1:0]) && 
-	      (wrptr[asz] == ~rdptr[asz]));
-	  
+              (wrptr[asz] == ~rdptr[asz]));
+          
       if (c_srdy & !full)
-	nxt_wrptr = wrptr_p1;
+        nxt_wrptr = wrptr_p1;
       else
-	nxt_wrptr = wrptr;
+        nxt_wrptr = wrptr;
 
       wr_en = (c_srdy & !full);
     end
@@ -68,32 +68,32 @@ module sd_fifo_head_s
   always @(`SDLIB_CLOCKING)
     begin
       if (reset)
-	begin
-	  wrptr <= `SDLIB_DELAY 0;
-	end
+        begin
+          wrptr <= `SDLIB_DELAY 0;
+        end
       else
-	begin
-	  wrptr <= `SDLIB_DELAY nxt_wrptr;
-	end // else: !if(reset)
+        begin
+          wrptr <= `SDLIB_DELAY nxt_wrptr;
+        end // else: !if(reset)
     end // always @ (posedge clk)
 
   function [asz:0] bin2grey;
     input [asz:0] bin_in;
-    integer 	  b;
+    integer       b;
     begin
       bin2grey[asz] = bin_in[asz];
       for (b=0; b<asz; b=b+1)
-	bin2grey[b] = bin_in[b] ^ bin_in[b+1];
+        bin2grey[b] = bin_in[b] ^ bin_in[b+1];
     end
   endfunction // for
 
   function [asz:0] grey2bin;
     input [asz:0] grey_in;
-    integer 	  b;
+    integer       b;
     begin
       grey2bin[asz] = grey_in[asz];
       for (b=asz-1; b>=0; b=b-1)
-	grey2bin[b] = grey_in[b] ^ grey2bin[b+1];
+        grey2bin[b] = grey_in[b] ^ grey2bin[b+1];
     end
   endfunction
 
