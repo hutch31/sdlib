@@ -10,10 +10,13 @@
 
 static int finishTime = 1000;
 queue<int> *driverQ[MAX_DRV_ID];
+double targetRate[MAX_DRV_ID];
 
 void tbInit () {
-  for (int i=0; i<MAX_DRV_ID; i++)
+  for (int i=0; i<MAX_DRV_ID; i++) {
     driverQ[i] = new queue<int>;
+    targetRate[i] = 1.0;
+  }
 }
 
 void setFinishTime (int t) { finishTime = t; }
@@ -31,6 +34,14 @@ void launch() {
     top->eval(); 
     nstime++;
   }
+}
+
+double getTargetRate (int driverId) {
+  return targetRate[driverId];
+}
+
+void setTargetRate (int driverId, double rate) {
+  targetRate[driverId] = rate;
 }
 
 void addDpiDriverData (int driverId, int data) {

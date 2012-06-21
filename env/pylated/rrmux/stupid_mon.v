@@ -1,5 +1,6 @@
 module stupid_mon
-  #(parameter width = 8)
+  #(parameter width = 8,
+    parameter id = 0)
   (
    input        clk,
    input        reset,
@@ -11,7 +12,7 @@ module stupid_mon
   always @(posedge clk)
     begin
       if (c_srdy)
-        $display ("Rcv data: %x", c_data);
+        $display ("Rcv [%02d]: %x", id, c_data);
     end
   assign c_drdy = 1;
 

@@ -10,6 +10,7 @@ os.environ['PATH']+=':'+os.environ['VERILATOR_ROOT']
 #export PATH=$VERILATOR_ROOT/bin:$PATH
 os.environ['SYSTEMC_LIBDIR']='/xpliant/tools/systemc-2.2/lib-linux64'
 includes="-Iobj_dir -I$VERILATOR_ROOT/include -I/usr/include/python2.7 -I/xpliant/tools/vcs/F-2011.12-3/include/"
+libdirs = ["../../../rtl/verilog/forks","../../../rtl/verilog/buffers","../../../rtl/verilog/memory"]
 
 basename = "bench_rrmux"
 
@@ -27,7 +28,7 @@ def verilate (basename, libdirs):
 #make -j -f Vour.mk
 #cd ..
 
-verilate (basename,["/home/guy/Proj/sdlib/rtl/verilog/buffers","/home/guy/Proj/sdlib/rtl/verilog/memory"])
+verilate (basename,libdirs)
 cfiles = ['sim_launch.cpp','sim_launch_wrap.c',os.environ['VERILATOR_ROOT']+'/share/verilator/include/verilated.cpp']
 
 os.system ('swig -python sim_launch.i')
