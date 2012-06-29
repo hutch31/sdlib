@@ -12,7 +12,8 @@ module stupid_mon
   import "DPI-C" function void addDpiDriverData (input integer driverId, input integer data);
   import "DPI-C" function real getTargetRate (input integer driverId);
   real                    actualRate;
-  
+
+/* verilator lint_off WIDTH */  
   always @(posedge clk)
     begin
       if (reset)
@@ -37,5 +38,6 @@ module stupid_mon
           
         end
     end
+/* verilator lint_on WIDTH */  
 
 endmodule // stupid_mon

@@ -77,8 +77,6 @@ module sd_rrmux
   reg [inputs-1:0]    rr_state;
   reg [inputs-1:0]    nxt_rr_state;
 
-  reg [$clog2(inputs)-1:0] data_ind;
-
   wire [width-1:0]     rr_mux_grid [0:inputs-1];
   reg 		       rr_locked;
   genvar               i;
@@ -115,11 +113,6 @@ module sd_rrmux
         
         always @*
           begin
-            data_ind = 0;
-            for (j=0; j<inputs; j=j+1)
-              if (rr_state[j])
-                data_ind = j;
-
             nxt_rr_locked = rr_locked;
 
             if ((c_srdy & rr_state) & (!rr_locked))
@@ -152,13 +145,13 @@ module sd_rrmux
   
   always @*
     begin
-      if ((mode ==  1) & (c_srdy & rr_state))
+      if ((mode ==  1) & |(c_srdy & rr_state))
         nxt_rr_state = rr_state;
       else if ((mode == 0) && !p_drdy && !fast_arb)
         nxt_rr_state = rr_state;
       else if ((mode == 0) && |(rr_state & c_srdy) && !p_drdy && fast_arb)
         nxt_rr_state = rr_state;
-      else if ((mode == 2) & (rr_locked | (c_srdy & rr_state)))
+      else if ((mode == 2) & (rr_locked | |(c_srdy & rr_state)))
         nxt_rr_state = rr_state;
       else if (fast_arb)
         nxt_rr_state = nxt_grant (rr_state, c_srdy);

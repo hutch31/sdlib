@@ -38,15 +38,17 @@ module behave1p_mem
 
   assign d_out = array[r_addr];
 
+/* -----\/----- EXCLUDED -----\/-----
   genvar g;
 
   generate
     for (g=0; g<depth; g=g+1)
       begin : breakout
-	wire [width-1:0] brk;
+        wire [width-1:0] brk;
 
-	assign brk=array[g];
+        assign brk=array[g];
       end
   endgenerate
+ -----/\----- EXCLUDED -----/\----- */
 
 endmodule

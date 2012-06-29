@@ -47,7 +47,6 @@ module sd_mirror
    );
 
   reg [mirror-1:0] 	 nxt_p_srdy;
-  reg                    load;
   wire                   nxt_accept;
  
   always @(posedge clk)
