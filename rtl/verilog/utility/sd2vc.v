@@ -18,7 +18,8 @@
 
 module sd2vc
   #(parameter width=8,
-    parameter cc_sz=2)
+    parameter cc_sz=2,
+    parameter reginp=0)
   (
    input     clk,
    input     reset,
@@ -35,6 +36,7 @@ module sd2vc
 
   reg [cc_sz-1:0]         cc, nxt_cc;
   reg                     nxt_p_vld;
+  wire                    in_cr;
   
   assign c_drdy = (cc != 0);
 
@@ -70,6 +72,25 @@ module sd2vc
   always @(posedge clk)
     if (nxt_p_vld)
       p_data <= c_data;
+
+  generate if (reginp == 1)
+    begin : reginp_yes
+      reg r_cr;
+      always @(posedge clk)
+        begin
+          if (reset)
+            r_cr <= 0;
+          else
+            r_cr <= p_cr;
+        end
+      assign in_cr = r_cr;
+    end // block: reginp_yes
+  else
+    begin : reginp_no
+      assign in_cr = p_cr;
+    end
+  endgenerate
+  
   
 
 endmodule // sd2vc

@@ -18,16 +18,17 @@ module bench_fifo_s;
   wire [width-1:0]      chk_data;               // From mem2p of behave2p_mem.v
   wire                  chk_drdy;               // From chk of sd_seq_check.v
   wire                  chk_srdy;               // From tail of sd_fifo_tail_s.v
-  wire [width-1:0]      gen_data;               // From gen of sd_seq_gen.v
+  wire [(width)-1:0]    gen_data;               // From gen of sd_seq_gen.v
   wire                  gen_drdy;               // From sd2vc of sd2vc.v
   wire                  gen_srdy;               // From gen of sd_seq_gen.v
   wire [asz-1:0]        rd_addr;                // From tail of sd_fifo_tail_s.v
   wire                  rd_en;                  // From tail of sd_fifo_tail_s.v
   wire [asz:0]          rdptr_tail;             // From tail of sd_fifo_tail_s.v
-  wire [asz:0]          usage;                  // From vchead of vc_fifo_head_s.v
-  wire [asz-1:0]        wr_addr;                // From vchead of vc_fifo_head_s.v
+  wire [(asz):0]        usage;                  // From vchead of vc_fifo_head_s.v
+  wire [(asz)-1:0]      wr_addr;                // From vchead of vc_fifo_head_s.v
+  wire [(width)-1:0]    wr_data;                // From vchead of vc_fifo_head_s.v
   wire                  wr_en;                  // From vchead of vc_fifo_head_s.v
-  wire [asz:0]          wrptr_head;             // From vchead of vc_fifo_head_s.v
+  wire [(asz):0]        wrptr_head;             // From vchead of vc_fifo_head_s.v
   wire                  x_cr;                   // From vchead of vc_fifo_head_s.v
   wire [(width)-1:0]    x_data;                 // From sd2vc of sd2vc.v
   wire                  x_vld;                  // From sd2vc of sd2vc.v
@@ -42,7 +43,7 @@ module bench_fifo_s;
     (/*AUTOINST*/
      // Outputs
      .p_srdy                            (gen_srdy),              // Templated
-     .p_data                            (gen_data[width-1:0]),   // Templated
+     .p_data                            (gen_data[(width)-1:0]), // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
@@ -61,7 +62,7 @@ module bench_fifo_s;
      .clk                               (clk),
      .reset                             (reset),
      .c_srdy                            (chk_srdy),              // Templated
-     .c_data                            (chk_data[width-1:0]));   // Templated
+     .c_data                            (chk_data[(width)-1:0])); // Templated
 
 /* sd2vc AUTO_TEMPLATE
  (
@@ -71,7 +72,7 @@ module bench_fifo_s;
      .p_data                            (x_data[]),
  );
  */
-  sd2vc #(.width(width), .cc_sz(5)) sd2vc
+  sd2vc #(.width(width), .cc_sz(5), .reginp(1)) sd2vc
     (/*AUTOINST*/
      // Outputs
      .c_drdy                            (gen_drdy),              // Templated
@@ -88,24 +89,29 @@ module bench_fifo_s;
    (
      .c_vld                             (x_vld),
      .c_cr                              (x_cr),
+     .c_data                            (x_data[]),
    );
    */
   vc_fifo_head_s #(
-                   .depth (depth)
-                   )
+                   // Parameters
+                   .depth               (depth),
+                   .width               (width),
+                   .reginp              (1))
   vchead
     (/*AUTOINST*/
      // Outputs
      .c_cr                              (x_cr),                  // Templated
-     .wrptr_head                        (wrptr_head[asz:0]),
-     .wr_addr                           (wr_addr[asz-1:0]),
+     .wrptr_head                        (wrptr_head[(asz):0]),
+     .wr_addr                           (wr_addr[(asz)-1:0]),
      .wr_en                             (wr_en),
-     .usage                             (usage[asz:0]),
+     .wr_data                           (wr_data[(width)-1:0]),
+     .usage                             (usage[(asz):0]),
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
      .c_vld                             (x_vld),                 // Templated
-     .rdptr_tail                        (rdptr_tail[asz:0]));
+     .c_data                            (x_data[(width)-1:0]),   // Templated
+     .rdptr_tail                        (rdptr_tail[(asz):0]));
   
 /* behave2p_mem AUTO_TEMPLATE
     (.d_out (chk_data[]),
@@ -115,7 +121,7 @@ module bench_fifo_s;
      .wr_addr (wr_addr),
      .rd_clk  (clk),
      .rd_addr (rd_addr),
-     .d_in    (x_data[]));
+     .d_in    (wr_data[]));
  */
   behave2p_mem #(width, depth) mem2p
     (/*AUTOINST*/
@@ -126,7 +132,7 @@ module bench_fifo_s;
      .rd_en                             (rd_en),                 // Templated
      .wr_clk                            (clk),                   // Templated
      .rd_clk                            (clk),                   // Templated
-     .d_in                              (x_data[width-1:0]),     // Templated
+     .d_in                              (wr_data[width-1:0]),    // Templated
      .rd_addr                           (rd_addr),               // Templated
      .wr_addr                           (wr_addr));               // Templated
   

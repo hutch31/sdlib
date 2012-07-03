@@ -25,18 +25,22 @@
 module vc_fifo_head_s
   #(parameter depth=16,
     parameter async=0,
-    parameter asz=$clog2(depth)
+    parameter asz=$clog2(depth),
+    parameter width=8,
+    parameter reginp=0
     )
     (
      input       clk,
      input       reset,
      input       c_vld,
      output reg  c_cr,
+     input [width-1:0] c_data,
 
      output [asz:0]     wrptr_head,
      output [asz-1:0]   wr_addr,
      output reg         wr_en,
      input [asz:0]      rdptr_tail,
+     output [width-1:0] wr_data,
 
      output [asz:0]     usage
 
@@ -48,6 +52,7 @@ module vc_fifo_head_s
   wire [asz:0]          rdptr;
   wire [asz:0]          usage;
   reg [asz:0]           cissued, nxt_cissued;
+  wire                  in_vld;
 
   assign wr_addr = wrptr[asz-1:0];
 
@@ -60,16 +65,16 @@ module vc_fifo_head_s
       full = ((wrptr[asz-1:0] == rdptr[asz-1:0]) && 
               (wrptr[asz] == ~rdptr[asz]));
           
-      if (c_vld)
+      if (in_vld)
         nxt_wrptr = wrptr_p1;
       else
         nxt_wrptr = wrptr;
 
-      wr_en = c_vld & !full;
+      wr_en = in_vld & !full;
 
-      if (c_cr & !c_vld)
+      if (c_cr & !in_vld)
         nxt_cissued = cissued + 1;
-      else if (c_vld & !c_cr)
+      else if (in_vld & !c_cr)
         nxt_cissued = cissued - 1;
       else
         nxt_cissued = cissued;
@@ -113,5 +118,31 @@ module vc_fifo_head_s
 
   assign wrptr_head = (async) ? bin2grey(wrptr) : wrptr;
   assign rdptr = (async)? grey2bin(rdptr_tail) : rdptr_tail;
+  
+  generate if (reginp == 1)
+    begin : reginp_yes
+      reg r_vld;
+      reg [width-1:0] r_data;
+      always @(posedge clk)
+        begin
+          if (reset)
+            r_vld <= 0;
+          else
+            r_vld <= c_vld;
+        end
+      always @(posedge clk)
+        begin
+          r_data <= c_data;
+        end
+      
+      assign in_vld = r_vld;
+      assign wr_data = r_data;
+    end // block: reginp_yes
+  else
+    begin : reginp_no
+      assign in_vld = c_vld;
+      assign wr_data = c_data;
+    end
+  endgenerate
   
 endmodule
