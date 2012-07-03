@@ -26,11 +26,11 @@ module sd_seq_check
 
   parameter pat_dep = 8;
 
-  reg [width-1:0]    last_seq;
-  reg 		     first;
+  reg [width-1:0]    last_seq, next_seq;
+  reg                first;
   reg [pat_dep-1:0]  drdy_pat;
-  integer 	     dpp;
-  reg 		     nxt_c_drdy;
+  integer            dpp;
+  reg                nxt_c_drdy;
   integer            err_cnt;
 
   initial
@@ -51,59 +51,60 @@ module sd_seq_check
       nxt_c_drdy = c_drdy;
 
       if (c_srdy & c_drdy)
-	begin
-	  if (drdy_pat[dpp])
-	    begin
-	      nxt_c_drdy = 1;
-	    end
-	  else
-	    nxt_c_drdy = 0;
-	end
+        begin
+          if (drdy_pat[dpp])
+            begin
+              nxt_c_drdy = 1;
+            end
+          else
+            nxt_c_drdy = 0;
+        end
       else if (!c_drdy)
-	begin
-	  if (drdy_pat[dpp])
-	    begin
-	      nxt_c_drdy = 1;
-	    end
-	  else
-	    nxt_c_drdy = 0;
-	end
+        begin
+          if (drdy_pat[dpp])
+            begin
+              nxt_c_drdy = 1;
+            end
+          else
+            nxt_c_drdy = 0;
+        end
     end
   always @(posedge clk)
     begin
       if ((c_srdy & c_drdy) | !c_drdy)
-	dpp = (dpp + 1) % pat_dep;
+        dpp = (dpp + 1) % pat_dep;
     end
 
   always @(posedge clk)
     begin
       if (reset)
-	begin
-	  c_drdy <= `SDLIB_DELAY 0;
+        begin
+          c_drdy <= `SDLIB_DELAY 0;
           err_cnt  = 0;
           drdy_pat = {pat_dep{1'b1}};
           dpp = 0;
           first = 1;
           last_seq = 0;
-	end
+        end
       else
-	begin
-	  c_drdy <= `SDLIB_DELAY nxt_c_drdy;
-	  if (c_srdy & c_drdy)
-	    begin
-	      if (!first && (c_data !== (last_seq + 1)))
+        begin
+          c_drdy <= `SDLIB_DELAY nxt_c_drdy;
+          if (c_srdy & c_drdy)
+            begin
+              next_seq = last_seq + 1;
+              if (!first && (c_data !== next_seq))
                 begin
-		  $display ("%t: ERROR   : %m: Sequence miscompare rcv=%x exp=%x",
-			    $time, c_data, last_seq+1);
+                  $display ("%t: ERROR   : %m: Sequence miscompare rcv=%x exp=%x",
+                            $time, c_data, next_seq);
                   err_cnt = err_cnt + 1;
                 end
-	      else
-		begin
-		  last_seq = c_data;
-		  first = 0;
-		end
-	    end // if (c_srdy & c_drdy)
-	end // else: !if(reset)
+              else
+                begin
+                  last_seq = c_data;
+                  first = 0;
+                end
+            end // if (c_srdy & c_drdy)
+        end // else: !if(reset)
     end
 
 endmodule // sd_seq_check

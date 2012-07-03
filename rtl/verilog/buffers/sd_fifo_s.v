@@ -42,7 +42,6 @@ module sd_fifo_s
 
   localparam asz = $clog2(depth);
 
-  reg [width-1:0]       mem [0:depth-1];
   wire                  rd_en;
   wire [asz:0]          rdptr_tail, rdptr_tail_sync;
   wire                  wr_en;
