@@ -1,4 +1,5 @@
 bench_vcif.v
+//vc2sd.v
 -y ../common
 -y ../../../rtl/verilog/memory
 -y ../../../rtl/verilog/buffers
