@@ -9,7 +9,7 @@ module bench_fifo_s;
   reg clk, reset;
 
   localparam width = 8;
-  localparam depth = 4;
+  localparam depth = 6;
   localparam asz   = $clog2(depth);
 
   initial clk = 0;
@@ -66,7 +66,7 @@ module bench_fifo_s;
      .p_data                            (x_data[]),
  );
  */
-  sd2vc #(.width(width), .cc_sz(5), .reginp(1)) sd2vc
+  sd2vc #(.width(width), .cc_sz(5), .reginp(0)) sd2vc
     (/*AUTOINST*/
      // Outputs
      .c_drdy                            (gen_drdy),              // Templated
@@ -88,7 +88,7 @@ module bench_fifo_s;
    );
    */
   vc2sd #(
-          .reginp                       (1),
+          .reginp                       (0),
           .depth                        (depth),
           .width                        (width))
   i_vc2sd
@@ -103,81 +103,6 @@ module bench_fifo_s;
      .clk                               (clk),
      .p_drdy                            (chk_drdy),              // Templated
      .reset                             (reset));
-/* -----\/----- EXCLUDED -----\/-----
-  /-* vc_fifo_head_s AUTO_TEMPLATE
-   (
-     .c_vld                             (x_vld),
-     .c_cr                              (x_cr),
-     .c_data                            (x_data[]),
-   );
-   *-/
-  vc_fifo_head_s #(
-                   // Parameters
-                   .depth               (depth),
-                   .width               (width),
-                   .reginp              (1))
-  vchead
-    (/-*AUTOINST*-/
-     // Outputs
-     .c_cr                              (x_cr),
-     .wrptr_head                        (wrptr_head[(asz):0]),
-     .wr_addr                           (wr_addr[(asz)-1:0]),
-     .wr_en                             (wr_en),
-     .wr_data                           (wr_data[(width)-1:0]),
-     .usage                             (usage[(asz):0]),
-     // Inputs
-     .clk                               (clk),
-     .reset                             (reset),
-     .c_vld                             (x_vld),
-     .c_data                            (x_data[(width)-1:0]),
-     .rdptr_tail                        (rdptr_tail[(asz):0]));
-  
-/-* behave2p_mem AUTO_TEMPLATE
-    (.d_out (chk_data[]),
-     .wr_en (wr_en),
-     .rd_en (rd_en),
-     .wr_clk (clk),
-     .wr_addr (wr_addr),
-     .rd_clk  (clk),
-     .rd_addr (rd_addr),
-     .d_in    (wr_data[]));
- *-/
-  behave2p_mem #(width, depth) mem2p
-    (/-*AUTOINST*-/
-     // Outputs
-     .d_out                             (chk_data[width-1:0]),
-     // Inputs
-     .wr_en                             (wr_en),
-     .rd_en                             (rd_en),
-     .wr_clk                            (clk),
-     .rd_clk                            (clk),
-     .d_in                              (wr_data[width-1:0]),
-     .rd_addr                           (rd_addr),
-     .wr_addr                           (wr_addr));
-  
-/-* sd_fifo_tail_s AUTO_TEMPLATE
- (
-     .c_clk                             (clk),
-     .c_reset                           (reset),
-     .p_clk                             (clk),
-     .p_reset                           (reset),
-     .p_\(.*\)   (chk_\1[]),
-     .c_\(.*\)   (gen_\1[]),
- );
- *-/
-  sd_fifo_tail_s #(.depth(depth)) tail
-    (/-*AUTOINST*-/
-     // Outputs
-     .rdptr_tail                        (rdptr_tail[asz:0]),
-     .rd_en                             (rd_en),
-     .rd_addr                           (rd_addr[asz-1:0]),
-     .p_srdy                            (chk_srdy),
-     // Inputs
-     .clk                               (clk),
-     .reset                             (reset),
-     .wrptr_head                        (wrptr_head[asz:0]),
-     .p_drdy                            (chk_drdy));
- -----/\----- EXCLUDED -----/\----- */
   
   initial
     begin
@@ -191,8 +116,8 @@ module bench_fifo_s;
       
       gen.rep_count = 1000;
 
-      // burst normal data for 20 cycles
-      repeat (20) @(posedge clk);
+      // burst normal data for 40 cycles
+      repeat (40) @(posedge clk);
 
       gen.srdy_pat = 8'h5A;
       repeat (20) @(posedge clk);

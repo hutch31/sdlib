@@ -41,31 +41,45 @@ module vc2sd
      output [width-1:0]     p_data
      );
 
+  localparam npt = (depth != (2**asz));
+
   reg [asz:0]           wrptr, nxt_wrptr;
   reg [asz:0]           wrptr_p1;
   reg                   full;
   reg [asz:0]           rdptr;
-  wire [asz:0]          usage;
+  //wire [asz:0]          usage;
+  reg [asz:0]           usage, nxt_usage;
+  wire [asz:0]          crtotal;
   reg [asz:0]           cissued, nxt_cissued;
   wire                  in_vld;
   reg [asz:0]           nxt_rdptr;
   reg [asz:0]           rdptr_p1;
   reg                   empty;
   reg                   nxt_p_srdy;
-  reg                   rd_en, wr_en;
+  //reg                   rd_en;
+  reg                   wr_en;
   wire [width-1:0]      wr_data;
   wire [asz-1:0]        rd_addr;
+  reg                   nxt_c_cr;
 
   reg [width-1:0]       buffer [0:depth-1];
 
-  assign usage = (rdptr[asz] & !wrptr[asz]) ? depth + wrptr[asz-1:0] - rdptr[asz-1:0]  : wrptr - rdptr;
+  //assign o_usage = (rdptr[asz] & !wrptr[asz]) ? depth + wrptr[asz-1:0] - rdptr[asz-1:0]  : wrptr - rdptr;
+
+  assign crtotal = usage + cissued + c_cr;
   
   always @*
     begin
-      wrptr_p1 = wrptr + 1;
-      
-      full = ((wrptr[asz-1:0] == rdptr[asz-1:0]) && 
-              (wrptr[asz] == ~rdptr[asz]));
+      if (npt && (wrptr == (depth-1)))
+        wrptr_p1 = 0;
+      else
+        wrptr_p1 = wrptr + 1;
+
+      if (npt)
+        full = (usage == depth);
+      else
+        full = ((wrptr[asz-1:0] == rdptr[asz-1:0]) && 
+                (wrptr[asz] == ~rdptr[asz]));
           
       if (in_vld)
         nxt_wrptr = wrptr_p1;
@@ -80,6 +94,15 @@ module vc2sd
         nxt_cissued = cissued - 1;
       else
         nxt_cissued = cissued;
+
+      nxt_c_cr = (crtotal < depth);
+
+      if (in_vld & ~(p_srdy & p_drdy))
+        nxt_usage = usage + 1;
+      else if ((p_srdy & p_drdy) & ~in_vld)
+        nxt_usage = usage - 1;
+      else
+        nxt_usage = usage;
     end
       
   always @(`SDLIB_CLOCKING)
@@ -88,13 +111,15 @@ module vc2sd
         begin
           wrptr   <= `SDLIB_DELAY 0;
           cissued <= `SDLIB_DELAY 0;
-          c_cr    <= 1'b0;
+          c_cr    <= `SDLIB_DELAY 1'b0;
+          usage   <= `SDLIB_DELAY 0;
         end
       else
         begin
           wrptr   <= `SDLIB_DELAY nxt_wrptr;
           cissued <= `SDLIB_DELAY nxt_cissued;
-          c_cr    <= ((cissued + usage) < (depth-1));
+          c_cr    <= `SDLIB_DELAY (crtotal < depth);
+          usage   <= `SDLIB_DELAY nxt_usage;
         end // else: !if(reset)
     end // always @ (posedge clk)
 
@@ -126,7 +151,10 @@ module vc2sd
 
   always @*
     begin
-      rdptr_p1 = rdptr + 1;
+      if (npt && (rdptr == (depth-1)))
+        rdptr_p1 = 0;
+      else
+        rdptr_p1 = rdptr + 1;
       
       empty = (wrptr == rdptr);
 
@@ -136,7 +164,7 @@ module vc2sd
         nxt_rdptr = rdptr;
           
       nxt_p_srdy = (wrptr != nxt_rdptr);
-      rd_en = (p_drdy & p_srdy) | (!empty & !p_srdy);
+      //rd_en = (p_drdy & p_srdy) | (!empty & !p_srdy);
     end
       
   always @(`SDLIB_CLOCKING)
