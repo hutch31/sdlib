@@ -1,7 +1,7 @@
 // Send an ethernet packet over GMII
 
 module gmii_driver
-  #(parameter id=0)
+  #(parameter id="driver0")
   (
    input            rx_clk,
    input            reset,
@@ -21,15 +21,15 @@ module gmii_driver
     integer i;
     
     begin
-      if (nq_queue_empty("driver0") != 0)
+      if (nq_queue_empty(id) != 0)
         begin
-          nq_get_open_packet("driver0");
-          pkt_len = nq_get_length_packet("driver0");
+          nq_get_open_packet(id);
+          pkt_len = nq_get_length_packet(id);
           pkt_ptr <= 0;
 
           for (i=0; i<pkt_len; i=i+1)
-            pktbuf[i] = nq_get_byte_packet("driver0");
-          nq_get_close_packet("driver0");
+            pktbuf[i] = nq_get_byte_packet(id);
+          nq_get_close_packet(id);
         end
     end
   endtask

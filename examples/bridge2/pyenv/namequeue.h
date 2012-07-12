@@ -23,11 +23,11 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <deque>
 #include <map>
 #include <stdint.h>
-#include <string>
+//#include <string>
 using std::vector;
 using std::deque;
 using std::map;
-using std::string;
+//using std::string;
 
 //typedef pair<string,int> namePair;
 
@@ -59,13 +59,13 @@ typedef deque<packet_t> packet_queue_t;
  * Namequeue is defined as a singleton, so there can only be one instance of namequeue
  * in a simulation.  Modules get access to the namequeue by calling getPtr().
  */
-class namequeue;
+//class namequeue;
 
 class namequeue {
  private:
-  map<string,packet_queue_t *> qmap;
+  map<char*,packet_queue_t *> qmap;
   //int nxt_queue;
-  void checkName (string name);
+  void checkName (char* name);
   static namequeue* _instance;
  protected:
   namequeue();
@@ -79,39 +79,39 @@ class namequeue {
   /// inserting the packet.
   /// @param name Name of queue to insert
   /// @param pkt  Packet vector to insert
-  int insert_packet (string name, packet_t &pkt);
+  int insert_packet (char* name, packet_t *pkt);
 
   /// Return length of the named queue in number of packets
   /// @param name Name of queue
-  int queue_size (string name);
+  int queue_size (char* name);
 
   /// Check queue empty
   /// @param name Name of queue
   /// @returns True if queue is empty, false otherwise
-  bool queue_empty (string name);
+  bool queue_empty (char* name);
 
   /// Return a packet iterator to the packet at the front of the queue.
   /// This call should be qualified by queue_size() or queue_empty() calls
   /// prior to calling.
   /// @param name Name of queue
-  packet_i front_iter (string name);
+  //packet_i front_iter (char* name);
 
   
   /// Return the size of the packet at the front of the queue
   /// @param name Name of queue
   /// @returns The size of the head packet in bytes, -1 if queue empty
-  int front_size (string name);
+  int front_size (char* name);
 
   /// Remove a packet from the front of the queue
   /// @param name Name of queue
   /// @returns 1 on successful packet removal, 0 if queue was empty
-  int remove_packet (string name);
+  int remove_packet (char* name);
 
   /// Copy the packet object and return a pointer to the new packet object
   /// Caller is responsible for delete on the returned object pointer
   /// @param name Name of queue
   /// @returns Pointer to first packet on the queue, returns null if queue empty
-  packet_t *get_packet (string name);
+  packet_t *get_packet (char* name);
 };
 
 #endif

@@ -26,7 +26,11 @@ namequeue* namequeue::getPtr()
   return _instance;
 }
 
-void namequeue::checkName (string name)
+namequeue::namequeue() 
+{
+}
+
+void namequeue::checkName (char* name)
 {
   packet_queue_t *qptr;
 
@@ -35,15 +39,15 @@ void namequeue::checkName (string name)
     qmap[name] = new packet_queue_t();
 }
 
-int namequeue::insert_packet (string name, packet_t &pkt)
+int namequeue::insert_packet (char* name, packet_t *pkt)
 {
 
   checkName(name);
-  qmap[name]->push_back(pkt);
+  qmap[name]->push_back(*pkt);
   return 0;
 }
 
-int namequeue::queue_size (string name) {
+int namequeue::queue_size (char* name) {
   packet_queue_t *qptr;
 
   qptr = qmap[name];
@@ -51,7 +55,7 @@ int namequeue::queue_size (string name) {
   else return qmap[name]->size();
 }
 
-int namequeue::remove_packet (string name) {
+int namequeue::remove_packet (char* name) {
   checkName(name);
   if (!qmap[name]->empty()) {
     qmap[name]->front().clear();
@@ -60,7 +64,7 @@ int namequeue::remove_packet (string name) {
   } else return 0;
 }
 
-bool namequeue::queue_empty (string name)
+bool namequeue::queue_empty (char* name)
 {
   packet_queue_t *qptr;
 
@@ -69,13 +73,14 @@ bool namequeue::queue_empty (string name)
   else return qmap[name]->empty(); 
 }
 
-
-packet_i namequeue::front_iter (string name) {
+/*
+packet_i namequeue::front_iter (char* name) {
   checkName(name);
   qmap[name]->front().begin();
 }
+*/
 
-int namequeue::front_size (string name)
+int namequeue::front_size (char* name)
 {
   packet_queue_t *qptr;
 
@@ -85,7 +90,7 @@ int namequeue::front_size (string name)
   else return qmap[name]->front().size();
 }
 
-packet_t *namequeue::get_packet (string name)
+packet_t *namequeue::get_packet (char* name)
 {
   packet_t *pptr;
 
