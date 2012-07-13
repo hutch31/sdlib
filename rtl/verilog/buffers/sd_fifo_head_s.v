@@ -1,10 +1,15 @@
 //----------------------------------------------------------------------
 // Srdy/Drdy FIFO Head "S"
 //
-// Building block for FIFOs.  The "S" (big) FIFO is design for smaller
+// Building block for FIFOs.  The "S" (small/sync) FIFO is design for smaller
 // FIFOs based around memories or flops, with sizes that are a power of 2.
 //
 // The "S" FIFO can be used as a two-clock asynchronous FIFO.
+//
+// Parameters:
+//   depth : depth/size of FIFO, in words
+//   asz   : address size, automatically computed from depth
+//   async : 1 for clock-synchronization FIFO, 0 for normal
 //
 // Naming convention: c = consumer, p = producer, i = internal interface
 //----------------------------------------------------------------------
@@ -35,7 +40,7 @@ module sd_fifo_head_s
      input       c_srdy,
      output      c_drdy,
 
-     output [asz:0]     wrptr_head,
+     output reg [asz:0] wrptr_head,
      output [asz-1:0]   wr_addr,
      output reg         wr_en,
      input [asz:0]      rdptr_tail
@@ -64,18 +69,34 @@ module sd_fifo_head_s
 
       wr_en = (c_srdy & !full);
     end
-      
-  always @(`SDLIB_CLOCKING)
-    begin
-      if (reset)
+
+  generate if (async == 0)
+    begin : sync_wptr                     
+      always @(`SDLIB_CLOCKING)
         begin
-          wrptr <= `SDLIB_DELAY 0;
+          if (reset)
+            wrptr <= `SDLIB_DELAY 0;
+          else
+            wrptr <= `SDLIB_DELAY nxt_wrptr;
+        end // always @ (posedge clk)
+
+      always @*
+        wrptr_head = wrptr;
+    end // block: sync_wptr
+  else
+    begin : async_wptr
+      always @(`SDLIB_CLOCKING)
+        begin
+          if (reset)
+            wrptr_head <= `SDLIB_DELAY 0;
+          else
+            wrptr_head <= `SDLIB_DELAY bin2grey (nxt_wrptr);
         end
-      else
-        begin
-          wrptr <= `SDLIB_DELAY nxt_wrptr;
-        end // else: !if(reset)
-    end // always @ (posedge clk)
+
+      always @*
+        wrptr = grey2bin(wrptr_head);
+    end
+  endgenerate
 
   function [asz:0] bin2grey;
     input [asz:0] bin_in;
@@ -97,7 +118,6 @@ module sd_fifo_head_s
     end
   endfunction
 
-  assign wrptr_head = (async) ? bin2grey(wrptr) : wrptr;
   assign rdptr = (async)? grey2bin(rdptr_tail) : rdptr_tail;
   
 endmodule
