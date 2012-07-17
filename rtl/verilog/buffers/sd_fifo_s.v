@@ -9,6 +9,9 @@
 // async parameter is set to 1, the pointers will be converted from
 // binary to grey code and double-synchronized.
 //
+// All synchronizer flops start with "hgff" for replacement during
+// synthesis with high-gain flops.
+//
 // Naming convention: c = consumer, p = producer, i = internal interface
 //----------------------------------------------------------------------
 // Author: Guy Hutchison
@@ -88,23 +91,23 @@ module sd_fifo_s
   generate
     if (async)
       begin : gen_sync
-        reg [asz:0] r_sync1, r_sync2;
-        reg [asz:0] w_sync1, w_sync2;
+        reg [asz:0] hgff_r_sync1, hgff_r_sync2;
+        reg [asz:0] hgff_w_sync1, hgff_w_sync2;
 
         always @(posedge p_clk)
           begin
-            w_sync1 <= `SDLIB_DELAY wrptr_head;
-            w_sync2 <= `SDLIB_DELAY w_sync1;
+            hgff_w_sync1 <= `SDLIB_DELAY wrptr_head;
+            hgff_w_sync2 <= `SDLIB_DELAY hgff_w_sync1;
           end
 
         always @(posedge c_clk)
           begin
-            r_sync1 <= `SDLIB_DELAY rdptr_tail;
-            r_sync2 <= `SDLIB_DELAY r_sync1;
+            hgff_r_sync1 <= `SDLIB_DELAY rdptr_tail;
+            hgff_r_sync2 <= `SDLIB_DELAY hgff_r_sync1;
           end
 
-        assign wrptr_head_sync = w_sync2;
-        assign rdptr_tail_sync = r_sync2;
+        assign wrptr_head_sync = hgff_w_sync2;
+        assign rdptr_tail_sync = hgff_r_sync2;
       end
     else
       begin : gen_nosync

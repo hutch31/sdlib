@@ -8,6 +8,25 @@ Introduction
 
 The srdy-drdy library provides a common specification for unidirectional data interfaces with bidirectional flow control. The library also provides a set of common modules with compliant interfaces.
 
+Naming Conventions
+~~~~~~~~~~~~~~~~~~
+
+A 'data unit' is the amount of data transferred in a single transaction.  An 'interface' is
+a group of srdy, drdy, and one or more data signals.  An interface where srdy is an output is
+a 'producer' interface, and one where srdy is an input is a 'consumer' interface.
+
+Verification Status
+~~~~~~~~~~~~~~~~~~~
+
+Most of the components included in this library have been actively used in multiple silicon
+tapeouts, and are considered known good.  Nonetheless users of the library should validate
+proper operation of the components in their designs.  Where applicable components which are
+not known to have been used in working silicon have been flagged.
+
+The example designs provided have not been validated in silicon, and should be used only as
+an illustration of use of the SDI component library and use of the SDI in custom-written
+blocks.
+
 Methodology
 -----------
 
@@ -16,7 +35,7 @@ The methodology of the srdy-drdy interface (SDI) is based around certain core pr
   * Interfaces are inherently unidirectional (no tristates)
   * Interfaces have varying width
   * Interfaces must support timing closure
-  * Interfaces do not have data available on every clock
+  * Interfaces may not have data available on every clock
   * Destinations may not be able to accept data on every clock
 
 While not all interfaces will meet all of the above criteria, the above provides a general case which almost all interfaces can fit under.  The last two points above imply some means of flow control between the source and the destination.  Many forms of flow control are possible, which have differing advantages and disadvantages for particular types of design and data patterns.  The goal of the SDI is not to provide the "right" answer but a consistent methodology and naming which is good enough for the majority of cases without imposing an undue overhead.
@@ -25,6 +44,8 @@ Signalling
 ~~~~~~~~~~
 
 The SDI divides communication between two blocks into data units, where a data unit is the amount of data (width in bits) which can be transferred in a single clock.  The size of a unit is determined by the designer.  Some units may form the complete transaction between two blocks (e.g. a control token), while others may only represent part of a transaction (packet interfaces, config interfaces).
+
+A transaction is completed when both srdy and drdy are asserted on the positive edge of a clock.
 
 The blocks in the library are all specified in terms of the size of the data unit, not including the srdy/drdy control signals.  Any additional control signals needed between the source and the destination are part of the data unit (e.g. SOP/EOP).
 
@@ -38,7 +59,7 @@ Srdy stands for "Source Ready".  Srdy assertion should follow certain rules:
   - srdy should remain asserted until the data unit is accepted
   - data should not change until the data unit is accepted
 
-These rules exist to avoid deadlock conditions or inconsistent data.  All inter-block interfaces must follow these rules.  The first rule is important, as it implies that the source //should not// look at the drdy signal to determine when it can send data.
+These rules exist to avoid deadlock conditions or inconsistent data.  All inter-block interfaces must follow these rules.  The first rule is important, as it implies that the source 'should not' look at the drdy signal to determine when it can send data.
 
 drdy
 ^^^^
@@ -54,7 +75,7 @@ Breaking the rules
 
 There are situations in which the assertion rules cannot be met, for example a source can talk to multiple destinations and wants to send data only to those which are ready.  The assertion rules can be broken as long as 'only one' side breaks the rules.  If both sides violate the assertion rules deadlock will occur as each waits for the other.
 
-The simplest way to resolve this is to take any area where the rules cannot be met and "wrap" it with compliant interfaces.  This is done by default if designers use the timing closure interfaces, all of which meet the assertion rules.
+The simplest way to resolve this is to take any area where the assertion rules cannot be met and "wrap" it with compliant interfaces.  This is done by default if designers use the timing closure interfaces, all of which meet the assertion rules.
 
 Usage
 ~~~~~
@@ -108,6 +129,9 @@ The two most common design methodologies today are registered-output (RO) and
 registered-input-registered-output (RIRO).  The library is generally built around
 an assumption of an RO design style but also supports RIRO.
 
+Note that the two styles are not mutually exclusive; a given project might specify that
+all blocks should use an RO style and superblocks (floorplan units) should use RIRO.
+
 sd_input
 ~~~~~~~~
 
@@ -137,6 +161,24 @@ sd_iofull
 Provided for completeness, this block can be used with a RIRO design style to
 provide timing closure for all of a block's inputs and outputs.  Combines an
 sd_input and sd_output.
+
+sd_iosync_p and sd_iosync_c
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Related pair of components for cross-clock domain communication.  Separated
+into two blocks as different clock domains are likely to be across different
+hierarchies.  Each block resides entirely in one clock domain.
+
+The consumer block resides in the sending clock domain, and provides a
+completely registered output to the receiving domain.  The incoming ack
+signal is double-synchronized.
+
+The producer block resides in the receiving clock domain, and provides a
+registered ack signal to the sending domain.  The incoming req is also
+double-synchronized, and data guarenteed to be stable by the time it is
+latched.  
+
+All s_* inputs to these blocks are false paths for timing closure.
 
 Buffers
 -------
@@ -222,6 +264,8 @@ Utility blocks could be items like a switch fabric, packet ring, or a scoreboard
 sd_ring_node
 ~~~~~~~~~~~~
 
+NOTE: This component is not silicon proven.
+
 This is a building block for a unidirectional ring.  Data is placed on the ring
 using the consumer interface and is removed on the producer interface.  sd_ring_node
 supports only point-to-point single-transaction processing (single transaction meaning
@@ -243,6 +287,14 @@ the c_dst_vld input of sd_mirror, giving multi-read/multi-write capability.
 The scoreboard supports both read and write, where write can also use a mask to implement
 partial updates.  If the mask is set to anything other than all 1's, the scoreboard performs
 a read-modify-write to change only the unmasked portion of the data.
+
+llmanager
+~~~~~~~~~
+
+WARNING: This component is under development and is not silicon-proven.
+
+This component implements a linked-list manager for implementing multiple FIFOs using a 
+linked list and a common memory pool.
 
 Memory
 ------
