@@ -1,6 +1,6 @@
 Srdy-Drdy Interface Library
 ===========================
-Guy Hutchison (hutch@opencores.org)
+Guy Hutchison (ghutchis@gmail.com)
 July 2012
 
 Introduction
@@ -117,6 +117,29 @@ A single pipeline stage block would look as follows:
      .ip_srdy (lin_srdy), .ip_drdy (lin_drdy), ip_data (lin_data));
 ----------------------------------------
 
+Area
+^^^^
+
+As the library components are all parameterizable, the are of the blocks depends
+on the parameters they are instantiated with.  Most blocks have a width parameter,
+and for sufficiently large widths (>16-32) the area of the component is dominated
+by the number of flops.  The table below shows the approximate flop count for
+some common components.
+
+.Rough Component Flop Count
+[width="40%",options="header"]
+|=======================
+| Name       | Flop Count   
+| sd_input   |  W      
+| sd_output  |  W      
+| sd_iohalf  |  W      
+| sd_iofull  |  2*W    
+| sd_iosync  |  2*W    
+| sd_fifo_s  |  D*W    
+| sd_fifo_b  | (D+2)*W 
+|=======================
+
+W stands for width, and D for depth for the FIFO components.
 
 Timing Closure Components
 -------------------------
@@ -132,6 +155,9 @@ an assumption of an RO design style but also supports RIRO.
 Note that the two styles are not mutually exclusive; a given project might specify that
 all blocks should use an RO style and superblocks (floorplan units) should use RIRO.
 
+For components which support synchronization across clock domains, the sync flops are
+all prefixed with hgff_ for replacement during synthesis with high-gain flip flops.
+
 sd_input
 ~~~~~~~~
 
@@ -140,12 +166,26 @@ consumer interface.  The only block output for the consumer interface is c_drdy.
 sd_input also provides a one-word buffer on c_data, but doesn't provide timing
 closure for this input.
 
+.sd_input Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+|=============
+
 sd_output
 ~~~~~~~~~
 
 The sd_output is the companion block to sd_input, providing timing closure for a
 block's producer interface (or interfaces).  It provides timing closure on p_srdy
 and p_data.
+
+.sd_output Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+|=============
 
 sd_iohalf
 ~~~~~~~~~
@@ -155,12 +195,27 @@ it closes timing on all of its inputs and outputs.  It has an efficiency of 0.5,
 meaning it can only accept data on at most every other clock, so it is useful for
 low-rate interfaces.
 
+.sd_iohalf Parameters
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+|=============
+
 sd_iofull
 ~~~~~~~~~
 
-Provided for completeness, this block can be used with a RIRO design style to
-provide timing closure for all of a block's inputs and outputs.  Combines an
-sd_input and sd_output.
+This block can be used with a RIRO design style to provide timing closure for 
+all of a block's inputs and outputs.  Combines an sd_input and sd_output.
+This is not a "pure" registered input block but there are no more than 2-3 levels 
+of logic before the input is registered.
+
+.sd_iofull Parameters
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+|=============
 
 sd_iosync_p and sd_iosync_c
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,6 +234,13 @@ double-synchronized, and data guarenteed to be stable by the time it is
 latched.  
 
 All s_* inputs to these blocks are false paths for timing closure.
+
+.sd_iosync Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+|=============
 
 Buffers
 -------
@@ -202,7 +264,29 @@ has built-in grey code conversion, so it can be used for crossing clock domains.
 When the "async" parameter is set, the FIFO switches to using grey code pointers, 
 and instantiates double-sync flops between the head and tail blocks.
 
-sd_fifo_s can only be used in natural powers of 2, due to the async support.
+sd_fifo_s can only be used in natural powers of 2, due to the async support. 
+
+.sd_fifo_s Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+| depth | 4+ | Depth of the FIFO.  Must be a natural power of 2.
+| async | 0/1| When set to 1, FIFO supports asynchronous behavior with separate read and write clocks.
+|=============
+
+sd_fifo_head_s
+^^^^^^^^^^^^^^
+
+This sub-block is the head (write) half of the FIFO.  It controls pointers only and
+does not have a data input; data should be written directly to the memory.
+
+sd_fifo_tail_s
+^^^^^^^^^^^^^^
+
+This sub-block is the tail (read) half of the FIFO.  It controls pointers only and
+does not have a data input; FIFO output data comes directly from the memory.  The
+tail block assumes memory has a single cycle of read latency.
 
 sd_fifo_b
 ~~~~~~~~~
@@ -212,6 +296,67 @@ both of its interfaces.  It is intended for packet FIFOs where the writer may wa
 to "forget" about a partially-written packet when an error is detected.  It is also
 useful for blocks which want to read ahead in the FIFO without actually removing data
 (p_abort rewinds the read pointer), or for retransmission.
+
+The FIFO controllers are built around an assumed read latency of 1 clock cycle.
+
+.sd_fifo_b Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+| depth | 4+ | Depth of the FIFO, in words
+| rd_commit | 0/1 | 1=Enable read-commit behavior
+| wr_commit | 0/1 | 1=Enable write-commit behavior
+|=============
+
+read-commit operation
+^^^^^^^^^^^^^^^^^^^^^
+
+Read-Commit operation allows the FIFO to operate in a mode where it can roll back
+the read pointer to the last time it was committed.  This can enable behavior such
+as retransmission, where data is read from the FIFO but committed only when it has
+been successfully transmitted.
+
+p_commit can be asserted at any time; any data which has been sent from the FIFO is
+committed.  p_abort rolls back the pointer to the previous save pointer; the FIFO
+will deassert p_srdy for at least 2 cycles while it refills its pipeline.
+
+write-commit operation
+^^^^^^^^^^^^^^^^^^^^^^
+
+Write-Commit allows the FIFO to roll back the write pointer to the last time it was
+committed.  This enables the FIFO to create atomic behavior where multiple words
+are committed and become visible to the read side at once.
+
+c_commit can be asserted with a valid data word, if so the current word is also committed.
+c_commit can also be asserted when c_srdy is deasserted.  If asserted with c_srdy,
+c_commit must be held until c_drdy acknowledges the transaction.
+
+c_abort should be asserted when c_srdy is deasserted, at which point the write pointer 
+will revert to its last saved value.
+
+FIFO Sharing
+^^^^^^^^^^^^
+
+The sd_fifo_head_b and sd_fifo_tail_b modules both have an enable signal which allows
+them to share a memory.  This enables several sharing options:
+
+  - A single head/tail pair can share a single port memory
+  - Multiple head/tail pairs can share a single or dual port memory
+
+Using multiple head/tail pairs to share a memory is done by a combination of the enable
+signals (to control which module accesses memory on a given cycle) and by the bound_high
+and bound_low inputs.
+
+To share a physical memory with multiple FIFOs, the memory must be statically partitioned
+between the different controllers, and each controller assigned a range.  The head and
+tail modules for each FIFO must have the same range.  The total range may be set to less
+than the physical size of the memory, but none of the ranges assigned may overlap.
+
+It is the responsibility of the implementer to create an appropriate scheduling for
+the enables to the different controllers and to multiplex the memory address bus
+between the controllers.  The mem_rd_data may be connected to all tail controllers,
+as they will keep track of read requests and latch the data appropriately.
 
 Forks and Joins
 ---------------
@@ -237,6 +382,14 @@ outputs.
 Note that sd_mirror is low-throughput, as it waits until all downstream blocks have
 acknoweldged before accepting another word.
 
+.sd_mirror Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+| mirror | 2+ | Number of output interfaces
+|=============
+
 sd_rrmux
 ~~~~~~~~
 
@@ -247,13 +400,25 @@ whether it moves on.
 Mode 0 multiplexes between single words of data.  Mode 1 allows an interface to burst,
 so once the interface begins transmitting it can transmit until it deasserts srdy.
 
-Mode 2 is for multiplexing packets, or other data where multiple words need to be
+Mode 2 is for multiplexing data where multiple words need to be
 kept together.  Once srdy is asserted, the block will not switch inputs until the
 end pattern is seen, even if srdy is deasserted.
 
-Also has a slow (1 cycle per input) and fast (immediate) arb mode.
+Also has a slow (1 cycle per input) and fast (immediate) arb mode.  The fast arb mode
+violates the drdy assertion rules, as it monitors the incoming srdy signals and then
+grants a drdy to one of the input interfaces.
 
-Validation note:  modes 1 and 2 have not been verified to date.
+.sd_rrmux Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name     | Valid range | Description
+| width    | 2+ | Width of the data output, in bits
+| mirror   | 2+ | Number of input interfaces
+| mode     | 0-2 | Number of output destinations
+| fast_arb | 0/1 | Enable fast arbitration
+|=============
+
+NOTE:  modes 1 and 2 have not been verified to date.
 
 Utility
 -------
@@ -272,6 +437,16 @@ supports only point-to-point single-transaction processing (single transaction m
 that subsequent requests from the same source are treated as independent, and other
 requests from other nodes may be interleaved at the destination).
 
+.sd_ring_node Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name       | Valid range | Description
+| data_width | 2+ | Width of the data output, in bits
+| addr_width | 2+ | Size of the ring address space
+| my_addr    | 0-(2^n^-1) | Address of this ring node
+|=============
+
+
 sd_scoreboard
 ~~~~~~~~~~~~~
 
@@ -288,6 +463,17 @@ The scoreboard supports both read and write, where write can also use a mask to 
 partial updates.  If the mask is set to anything other than all 1's, the scoreboard performs
 a read-modify-write to change only the unmasked portion of the data.
 
+.sd_scoreboard Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name       | Valid range | Description
+| width      | 2+ | Width of the data input/output, in bits
+| items      | 4+ | Number of items (depth) in the scoreboard
+| use_txid   | 0/1 | Enable use of the txid input
+| use_mask   | 0/1 | Enable masked (read-modify-write) writes.  If 0, mask input will be ignored.
+| txid_sz    | 1+  | Size of the txid data
+|=============
+
 llmanager
 ~~~~~~~~~
 
@@ -296,9 +482,49 @@ WARNING: This component is under development and is not silicon-proven.
 This component implements a linked-list manager for implementing multiple FIFOs using a 
 linked list and a common memory pool.
 
+.llmanager Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name      | Valid range | Description
+| lpsz      | 2+ | link list page size, in bits
+| lpdsz     | 3+ | link page data size, must be at least size of address
+| pages     | 4+ | number of pages
+| sources   | 2+ |number of sources
+| sinks     | 2+ |number of sinks
+| sksz      | log2(sinks) |number of sink address bits
+| maxref    | 0+ | maximum reference count, disable with maxref = 0
+| refsz     | 2+ | size of reference count bits
+|=============
+
 Memory
 ------
 
 Contains synthesizable memories implemented as flops.  These correspond to the
 commonly used registered-output memories available in most technologies.
+
+behave1p_mem
+~~~~~~~~~~~~
+
+Single (1RW) port behavioral memory model with a synchronous read port.
+
+.behave1p_mem Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name      | Valid range | Description
+| width     | 2+ | Memory input/output width, in bits
+| depth     | 4+ | Memory depth
+|=============
+
+behave2p_mem
+~~~~~~~~~~~~
+
+Dual (1R-1W) port behavioral memory model with a synchronous read port.
+
+.behave2p_mem Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name      | Valid range | Description
+| width     | 2+ | Memory input/output width, in bits
+| depth     | 4+ | Memory depth
+|=============
 
