@@ -1,4 +1,5 @@
 bench_fifo_s.v
++libext+.v
 -y ../common
 -y ../../../rtl/verilog/buffers
 -y ../../../rtl/verilog/memory

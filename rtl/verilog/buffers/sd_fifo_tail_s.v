@@ -95,7 +95,7 @@ module sd_fifo_tail_s
         end // always @ (posedge clk)
 
       always @*
-        rdptr_head = rdptr;
+        rdptr_tail = rdptr;
     end // block: sync_wptr
   else
     begin : async_rptr
