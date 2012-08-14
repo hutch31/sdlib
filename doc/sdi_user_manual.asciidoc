@@ -117,6 +117,51 @@ A single pipeline stage block would look as follows:
      .ip_srdy (lin_srdy), .ip_drdy (lin_drdy), ip_data (lin_data));
 ----------------------------------------
 
+Pipelining
+^^^^^^^^^^
+
+Building a multistage pipeline within a design block can also be simplified by
+using SDI components.  The sd_output block can also be used as an inter-stage
+timing closure element for the datapath.  This does create a potential critical
+path on the drdy signal across the block, as this signal will not be registered
+until it hits the sd_input block in the first stage, however each sd_output
+stage only adds a single gate delay to the path.
+
+Below is a sample three-stage pipeline.  The two sd_output blocks before the
+final stage are for inter-stage timing closure.
+
+--------------------------------
+
+  +----------+   +-----------+   +-----------+   +-----------+
+  | sd_input |-->| sd_output |-->| sd_output |-->| sd_output |
+  |  stage 1 |   |  stage 1  |   |  stage 2  |   |  stage 3  |
+  +----------+   +-----------+   +-----------+   +-----------+
+
+--------------------------------
+
+Pipelines may also need to incorporate elements within them which contain their
+own internal pipeline.  An example of this would be a memory with a 2-cycle latency.
+These can be incorporated by keeping a parallel chain of valid state flops, and
+then gating the clock to the entire group when the output drdy is low.  The code
+fragment below shows a sample such block.
+
+----------------------------------------
+  mem_2cycle sample_mem
+    (.clk (gated_clk), 
+     .rd_data(rd_data),
+     .rd_en  (rd_en_s0),
+     ...
+     );
+
+  always @(posedge gated_clk)
+    begin
+      rd_en_s1 <= rd_en_s0;
+      rd_en_s2 <= rd_en_s1;
+    end
+
+  assign gated_clk = clk & (!vld | drdy_s2);
+----------------------------------------
+
 Area
 ^^^^
 
