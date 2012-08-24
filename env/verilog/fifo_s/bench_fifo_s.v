@@ -5,18 +5,22 @@ module bench_fifo_s;
   reg clk, reset;
 
   localparam width = 8;
+  localparam depth = 32;
+  localparam asz = $clog2(depth);
 
   initial clk = 0;
   always #10 clk = ~clk;
 
   /*AUTOWIRE*/
   // Beginning of automatic wires (for undeclared instantiated-module outputs)
-  wire [width-1:0]      chk_data;               // From fifo_s of sd_fifo_s.v
+  wire [7:0]            chk_data;               // From fifo_s of sd_fifo_s.v
   wire                  chk_drdy;               // From chk of sd_seq_check.v
   wire                  chk_srdy;               // From fifo_s of sd_fifo_s.v
+  wire [asz:0]          chk_usage;              // From fifo_s of sd_fifo_s.v
   wire [width-1:0]      gen_data;               // From gen of sd_seq_gen.v
   wire                  gen_drdy;               // From fifo_s of sd_fifo_s.v
   wire                  gen_srdy;               // From gen of sd_seq_gen.v
+  wire [asz:0]          gen_usage;              // From fifo_s of sd_fifo_s.v
   // End of automatics
 
 /* sd_seq_gen AUTO_TEMPLATE
@@ -32,7 +36,7 @@ module bench_fifo_s;
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
-     .p_drdy                            (gen_drdy));             // Templated
+     .p_drdy                            (gen_drdy));              // Templated
 
 /* sd_seq_check AUTO_TEMPLATE
  (
@@ -47,7 +51,7 @@ module bench_fifo_s;
      .clk                               (clk),
      .reset                             (reset),
      .c_srdy                            (chk_srdy),              // Templated
-     .c_data                            (chk_data[width-1:0]));  // Templated
+     .c_data                            (chk_data[width-1:0]));   // Templated
 
 /* sd_fifo_s AUTO_TEMPLATE
  (
@@ -63,16 +67,18 @@ module bench_fifo_s;
     (/*AUTOINST*/
      // Outputs
      .c_drdy                            (gen_drdy),              // Templated
+     .c_usage                           (gen_usage[asz:0]),      // Templated
      .p_srdy                            (chk_srdy),              // Templated
-     .p_data                            (chk_data[width-1:0]),   // Templated
+     .p_data                            (chk_data[7:0]),         // Templated
+     .p_usage                           (chk_usage[asz:0]),      // Templated
      // Inputs
      .c_clk                             (clk),                   // Templated
      .c_reset                           (reset),                 // Templated
      .c_srdy                            (gen_srdy),              // Templated
-     .c_data                            (gen_data[width-1:0]),   // Templated
+     .c_data                            (gen_data[7:0]),         // Templated
      .p_clk                             (clk),                   // Templated
      .p_reset                           (reset),                 // Templated
-     .p_drdy                            (chk_drdy));             // Templated
+     .p_drdy                            (chk_drdy));              // Templated
 
   initial
     begin
@@ -95,10 +101,12 @@ module bench_fifo_s;
 
       // check FIFO overflow
       gen.srdy_pat = 8'hFD;
+      chk.drdy_pat = 8'h03;
       repeat (100) @(posedge clk);
 
       // check FIFO underflow
       gen.srdy_pat = 8'h11;
+      chk.drdy_pat = 8'hEE;
       repeat (100) @(posedge clk);
 
       #5000;
@@ -107,5 +115,5 @@ module bench_fifo_s;
 
 endmodule // bench_fifo_s
 // Local Variables:
-// verilog-library-directories:("." "../../rtl/verilog/buffers")
+// verilog-library-directories:("." "../common" "../../../rtl/verilog/buffers")
 // End:

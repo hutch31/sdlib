@@ -45,7 +45,9 @@ module sd_fifo_tail_s
      output [asz-1:0]       rd_addr,
 
      output reg             p_srdy,
-     input                  p_drdy
+     input                  p_drdy,
+     
+     output reg [asz:0]     p_usage
      );
 
   reg [asz:0]           rdptr;
@@ -70,6 +72,11 @@ module sd_fifo_tail_s
           
       nxt_p_srdy = (wrptr != nxt_rdptr);
       rd_en = (p_drdy & p_srdy) | (!empty & !p_srdy);
+      
+      if (wrptr[asz] == rdptr[asz])
+        p_usage = wrptr - rdptr;
+      else
+        p_usage = (wrptr[asz-1:0] + depth) - rdptr[asz-1:0];
     end
       
   always @(`SDLIB_CLOCKING)

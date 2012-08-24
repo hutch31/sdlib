@@ -43,7 +43,9 @@ module sd_fifo_head_s
      output reg [asz:0] wrptr_head,
      output [asz-1:0]   wr_addr,
      output reg         wr_en,
-     input [asz:0]      rdptr_tail
+     input [asz:0]      rdptr_tail,
+
+     output reg [asz:0] c_usage
 
      );
 
@@ -68,6 +70,11 @@ module sd_fifo_head_s
         nxt_wrptr = wrptr;
 
       wr_en = (c_srdy & !full);
+
+      if (wrptr[asz] == rdptr[asz])
+        c_usage = wrptr - rdptr;
+      else
+        c_usage = (wrptr[asz-1:0] + depth) - rdptr[asz-1:0];
     end
 
   generate if (async == 0)

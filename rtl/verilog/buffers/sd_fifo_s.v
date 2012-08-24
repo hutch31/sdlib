@@ -27,7 +27,8 @@
 module sd_fifo_s
   #(parameter width=8,
     parameter depth=16,
-    parameter async=0
+    parameter async=0,
+    parameter asz=$clog2(depth)
     )
     (
      input       c_clk,
@@ -35,15 +36,15 @@ module sd_fifo_s
      input       c_srdy,
      output      c_drdy,
      input [width-1:0] c_data,
+     output [asz:0]    c_usage,
 
      input       p_clk,
      input       p_reset,
      output      p_srdy,
      input       p_drdy,
-     output  [width-1:0] p_data
+     output  [width-1:0] p_data,
+     output [asz:0]      p_usage
      );
-
-  localparam asz = $clog2(depth);
 
   wire                  rd_en;
   wire [asz:0]          rdptr_tail, rdptr_tail_sync;
@@ -69,6 +70,7 @@ module sd_fifo_s
      .wrptr_head                        (wrptr_head),
      .wr_en                             (wr_en),
      .wr_addr                           (wr_addr),
+     .c_usage                           (c_usage),
      // Inputs
      .clk                               (c_clk),
      .reset                             (c_reset),
@@ -82,6 +84,7 @@ module sd_fifo_s
      .rd_en                             (rd_en),
      .rd_addr                           (rd_addr),
      .p_srdy                            (p_srdy),
+     .p_usage                           (p_usage),
      // Inputs
      .clk                               (p_clk),
      .reset                             (p_reset),
