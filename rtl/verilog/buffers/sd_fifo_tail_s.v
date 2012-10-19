@@ -35,19 +35,20 @@ module sd_fifo_tail_s
     parameter asz=$clog2(depth)
     )
     (
-     input                  clk,
-     input                  reset,
+     input              clk,
+     input              clken,
+     input              reset,
 
-     input [asz:0]          wrptr_head,
-     output reg [asz:0]     rdptr_tail,
+     input [asz:0]      wrptr_head,
+     output reg [asz:0] rdptr_tail,
 
-     output reg             rd_en,
-     output [asz-1:0]       rd_addr,
+     output reg         rd_en,
+     output [asz-1:0]   rd_addr,
 
-     output reg             p_srdy,
-     input                  p_drdy,
+     output reg         p_srdy,
+     input              p_drdy,
      
-     output reg [asz:0]     p_usage
+     output reg [asz:0] p_usage
      );
 
   reg [asz:0]           rdptr;
@@ -71,7 +72,7 @@ module sd_fifo_tail_s
         nxt_rdptr = rdptr;
           
       nxt_p_srdy = (wrptr != nxt_rdptr);
-      rd_en = (p_drdy & p_srdy) | (!empty & !p_srdy);
+      rd_en = clken & nxt_p_srdy & ~(p_srdy & ~p_drdy);
       
       if (wrptr[asz] == rdptr[asz])
         p_usage = wrptr - rdptr;
@@ -85,7 +86,7 @@ module sd_fifo_tail_s
         begin
           p_srdy  <= `SDLIB_DELAY 0;
         end
-      else
+      else if (clken)
         begin
           p_srdy <= `SDLIB_DELAY nxt_p_srdy;
         end // else: !if(reset)
@@ -97,7 +98,7 @@ module sd_fifo_tail_s
         begin
           if (reset)
             rdptr <= `SDLIB_DELAY 0;
-          else
+          else if (clken)
             rdptr <= `SDLIB_DELAY nxt_rdptr;
         end // always @ (posedge clk)
 
@@ -110,7 +111,7 @@ module sd_fifo_tail_s
         begin
           if (reset)
             rdptr_tail <= `SDLIB_DELAY 0;
-          else
+          else if (clken)
             rdptr_tail <= `SDLIB_DELAY bin2grey (nxt_rdptr);
         end
 

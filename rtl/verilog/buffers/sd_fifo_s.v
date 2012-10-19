@@ -87,6 +87,7 @@ module sd_fifo_s
      .p_usage                           (p_usage),
      // Inputs
      .clk                               (p_clk),
+     .clken                             (1'b1),
      .reset                             (p_reset),
      .wrptr_head                        (wrptr_head_sync),
      .p_drdy                            (p_drdy));
