@@ -32,6 +32,7 @@ module sd_seq_check
   integer            dpp;
   reg                nxt_c_drdy;
   integer            err_cnt;
+  integer            ok_cnt;
 
   initial
     begin
@@ -44,6 +45,7 @@ module sd_seq_check
       first = 1;
       c_drdy = 0;
       err_cnt = 0;
+      ok_cnt = 0;
     end
 
   always @*
@@ -85,6 +87,7 @@ module sd_seq_check
           dpp = 0;
           first = 1;
           last_seq = 0;
+          ok_cnt = 1;
         end
       else
         begin
@@ -102,6 +105,7 @@ module sd_seq_check
                 begin
                   last_seq = c_data;
                   first = 0;
+                  ok_cnt = ok_cnt + 1;
                 end
             end // if (c_srdy & c_drdy)
         end // else: !if(reset)

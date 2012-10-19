@@ -109,6 +109,28 @@ module bench_fifo_s;
       chk.drdy_pat = 8'hEE;
       repeat (100) @(posedge clk);
 
+      // Run out the remainder of the repeat count
+      gen.srdy_pat = 8'hF0;
+      chk.drdy_pat = 8'h0F;
+      fork
+        begin : runout
+          while (gen.rep_count > 0) @(posedge clk);
+        end
+        begin : timeout
+          repeat (10000) @(posedge clk);
+          disable runout;
+        end
+      join
+
+      if (chk.ok_cnt >= 1000)
+        $display ("----- TEST PASSED -----");
+      else
+        begin
+          $display ("***** TEST FAILED *****");
+          $display ("Ok count=%4d", chk.ok_cnt);
+        end
+
+
       #5000;
       $finish;
     end
