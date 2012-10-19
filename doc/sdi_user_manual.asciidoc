@@ -320,6 +320,22 @@ sd_fifo_s can only be used in natural powers of 2, due to the async support.
 | async | 0/1| When set to 1, FIFO supports asynchronous behavior with separate read and write clocks.
 |=============
 
+sync operation
+^^^^^^^^^^^^^^
+
+When the core is used as a synchronous core, the two input clock and input reset
+signals should be tied to the same clock and reset, respectively.  The two usage
+counters will read the same value; the user should use one usage counter and leave
+the other counter disconnected.
+
+async support
+^^^^^^^^^^^^^
+
+The sd_fifo_head_s and sd_fifo_tail_s have separate usage counters available.
+Each usage counter is specific to the clock domain it operates in.  If the core
+is in async mode, the two usage counters may display different values during
+operation due to the cycle delay of pointers crossing the clock domain.
+
 sd_fifo_head_s
 ^^^^^^^^^^^^^^
 
@@ -539,6 +555,49 @@ linked list and a common memory pool.
 | sksz      | log2(sinks) |number of sink address bits
 | maxref    | 0+ | maximum reference count, disable with maxref = 0
 | refsz     | 2+ | size of reference count bits
+|=============
+
+sd2vc
+~~~~~
+
+WARNING: This component is under development and is not silicon-proven.
+
+This component converts between the srdy-drdy signalling protocol and a valid-credit
+protocol.  Under a valid-credit protocol the transmitter may transmit as many data
+words as it has credit available.  Credits are returned using the _cr interface.
+
+This interface has the potential advantage of having better timing but at a cost of
+increased buffering on the receiver side.
+
+.llmanager Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name       | Valid range | Description
+| width      | 2+  | Width of data bus, in bits
+| reginp     | 0/1 | If 1, all block inputs are also registered
+| cc_sz      | 2+  | Size of credit counter.  Number of credits is 2**cc_sz
+|=============
+
+vc2sd
+~~~~~
+
+WARNING: This component is under development and is not silicon-proven.
+
+This component converts back between a valid-credit interface to an
+srdy-drdy interface.  Contains a small FIFO internally to prevent
+overrun.  On startup vc2sd issues credits based on the size of its
+internal FIFO.
+
+At present this block does not have a credit recovery mechanism.
+
+.llmanager Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name       | Valid range | Description
+| width      | 2+  | Width of data bus, in bits
+| depth      | 2+  | Depth of internal FIFO
+| asz        | log2(depth) | Address size of FIFO
+| reginp     | 0/1 | If 1, all block inputs are also registered
 |=============
 
 Memory

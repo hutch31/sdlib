@@ -1,7 +1,8 @@
 //----------------------------------------------------------------------
 // Srdy/Drdy to Valid/Credit interface conversion
 //
-// Halts timing on all output signals
+// Halts timing on all p-side output signals
+// Halts timing on all p-side input signals when reginp == 1
 //
 // Naming convention: c = consumer, p = producer, i = internal interface
 //----------------------------------------------------------------------

@@ -4,6 +4,9 @@
 // Converts a valid-credit interface to an srdy-drdy interface using
 // a small built-in FIFO.
 //
+// Halts timing on all c-side output signals.
+// Halts timing on all c-side input signals when reginp == 1
+//
 // Naming convention: c = consumer, p = producer, i = internal interface
 //----------------------------------------------------------------------
 // Author: Guy Hutchison
@@ -24,7 +27,6 @@
 
 module vc2sd
   #(parameter depth=16,
-    parameter async=0,
     parameter asz=$clog2(depth),
     parameter width=8,
     parameter reginp=0
