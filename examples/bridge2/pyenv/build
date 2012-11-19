@@ -5,7 +5,7 @@
 
 import sys, os
 
-os.environ['VERILATOR_ROOT']='/xpliant/tools/verilator'
+#os.environ['VERILATOR_ROOT']='/xpliant/tools/verilator'
 os.environ['PATH']+=':'+os.environ['VERILATOR_ROOT']
 #export PATH=$VERILATOR_ROOT/bin:$PATH
 os.environ['SYSTEMC_LIBDIR']='/xpliant/tools/systemc-2.2/lib-linux64'
@@ -30,7 +30,7 @@ def verilate (basename, libdirs):
 #cd ..
 
 verilate (basename,libdirs)
-cfiles = ['sim_launch.cpp','sim_launch_wrap.cxx',os.environ['VERILATOR_ROOT']+'/share/verilator/include/verilated.cpp',os.environ['VERILATOR_ROOT']+'/share/verilator/include/verilated_vcd_c.cpp','namequeue.cpp','namequeue_dpi.cpp']
+cfiles = ['sim_launch.cpp','sim_launch_wrap.cxx',os.environ['VERILATOR_ROOT']+'/include/verilated.cpp',os.environ['VERILATOR_ROOT']+'/include/verilated_vcd_c.cpp','namequeue.cpp','namequeue_dpi.cpp']
 
 os.system ('swig -c++ -python sim_launch.i')
 #g++ -fPIC -c sim_launch.cpp    $INCLUDES

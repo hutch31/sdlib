@@ -29,7 +29,7 @@ def verilate (basename, libdirs):
 #cd ..
 
 verilate (basename,libdirs)
-cfiles = ['sim_launch.cpp','sim_launch_wrap.c',os.environ['VERILATOR_ROOT']+'/share/verilator/include/verilated.cpp',os.environ['VERILATOR_ROOT']+'/share/verilator/include/verilated_vcd_c.cpp']
+cfiles = ['sim_launch.cpp','sim_launch_wrap.c',os.environ['VERILATOR_ROOT']+'/include/verilated.cpp',os.environ['VERILATOR_ROOT']+'/include/verilated_vcd_c.cpp']
 
 os.system ('swig -python sim_launch.i')
 #g++ -fPIC -c sim_launch.cpp    $INCLUDES

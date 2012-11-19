@@ -145,13 +145,13 @@ module sd_rrmux
   
   always @*
     begin
-      if ((mode ==  1) & |(c_srdy & rr_state))
+      if ((mode ==  1) & (|(c_srdy & rr_state)))
         nxt_rr_state = rr_state;
       else if ((mode == 0) && !p_drdy && !fast_arb)
         nxt_rr_state = rr_state;
       else if ((mode == 0) && |(rr_state & c_srdy) && !p_drdy && fast_arb)
         nxt_rr_state = rr_state;
-      else if ((mode == 2) & (rr_locked | |(c_srdy & rr_state)))
+      else if ((mode == 2) & (rr_locked | (|(c_srdy & rr_state))))
         nxt_rr_state = rr_state;
       else if (fast_arb)
         nxt_rr_state = nxt_grant (rr_state, c_srdy);
@@ -162,7 +162,7 @@ module sd_rrmux
   always @(`SDLIB_CLOCKING)
     begin
       if (reset)
-        rr_state <= `SDLIB_DELAY (fast_arb)? 0 : 1;
+        rr_state <= `SDLIB_DELAY (fast_arb)? {inputs{1'b0}} : {{inputs-1{1'b0}},1'b1};
       else
         rr_state <= `SDLIB_DELAY nxt_rr_state;
     end
