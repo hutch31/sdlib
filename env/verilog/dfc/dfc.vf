@@ -1,0 +1,9 @@
+bench_dfc.v
+dfc_sender.v
+dfc_receiver.v
++libext+.v
+-y ../common
+-y ../../../rtl/verilog/closure
+-y ../../../rtl/verilog/buffers
+-y ../../../rtl/verilog/memory
+
