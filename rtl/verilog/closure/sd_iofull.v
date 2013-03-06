@@ -27,7 +27,8 @@ module sd_iofull
 
   wire 		      i_irdy, i_drdy;
   wire [width-1:0]    i_data;
-
+  wire                i_srdy;
+  
   sd_input #(width) in
     (
      .c_drdy				(c_drdy),
