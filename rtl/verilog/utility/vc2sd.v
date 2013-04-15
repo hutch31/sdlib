@@ -40,7 +40,7 @@ module vc2sd
 
      output reg             p_srdy,
      input                  p_drdy,
-     output [width-1:0]     p_data
+     output reg [width-1:0] p_data
      );
 
   localparam npt = (depth != (2**asz));
