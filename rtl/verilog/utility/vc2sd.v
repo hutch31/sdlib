@@ -190,7 +190,12 @@ module vc2sd
     end
 
   assign rd_addr = rdptr[asz-1:0];
-  assign p_data = buffer[rd_addr];
+//  assign p_data = buffer[rd_addr];
+
+  always @(posedge clk)
+    begin
+      p_data <= buffer[nxt_rdptr[asz-1:0]];
+    end
 
 endmodule
   
