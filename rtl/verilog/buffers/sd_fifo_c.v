@@ -74,7 +74,7 @@ module sd_fifo_c
       else
         wrptr_p1 = wrptr + 1;
       
-      full = (usage == (depth-1));
+      full = (usage == (depth));
           
       if (c_srdy & !full)
         nxt_wrptr = wrptr_p1;

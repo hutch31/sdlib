@@ -5,7 +5,7 @@ module bench_fifo_c;
   reg clk, reset;
 
   localparam width = 8;
-  localparam depth = 28;
+  localparam depth = 7;
   localparam usz = $clog2(depth+1);
 
   initial clk = 0;
@@ -74,13 +74,17 @@ module bench_fifo_c;
 
   initial
     begin
+`ifdef MODEL_TECH
+      $wlfdumpvars(0, bench_fifo_c);
+`else
       $dumpfile("fifo_s.vcd");
       $dumpvars;
+`endif
       reset = 1;
       #100;
       reset = 0;
 
-      gen.rep_count = 1000;
+      gen.rep_count = 9000;
 
       // burst normal data for 20 cycles
       repeat (20) @(posedge clk);
@@ -102,11 +106,14 @@ module bench_fifo_c;
       repeat (100) @(posedge clk);
 
       // Run out the remainder of the repeat count
-      gen.srdy_pat = 8'hF0;
-      chk.drdy_pat = 8'h0F;
       fork
         begin : runout
-          while (gen.rep_count > 0) @(posedge clk);
+          while (gen.rep_count > 0) 
+            begin
+              gen.srdy_pat = {$random} | (1 << ($random % 8));
+              chk.drdy_pat = {$random} | (1 << ($random % 8));
+              repeat (16) @(posedge clk);
+            end
         end
         begin : timeout
           repeat (10000) @(posedge clk);
