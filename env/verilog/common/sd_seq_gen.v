@@ -17,21 +17,20 @@
 `endif
 
 module sd_seq_gen
-  #(parameter width=8)
+  #(parameter width=8,
+    parameter pat_dep=8)
   (input clk,
    input reset,
    output reg     p_srdy,
    input          p_drdy,
    output reg [width-1:0] p_data);
 
-  reg 			  nxt_p_srdy;
-  reg [width-1:0] 	  nxt_p_data;
+  reg                     nxt_p_srdy;
+  reg [width-1:0]         nxt_p_data;
 
-  parameter pat_dep = 8;
-
-  reg [pat_dep-1:0] 	  srdy_pat;
-  integer 		  spp, startup;
-  integer 		  rep_count;
+  reg [pat_dep-1:0]       srdy_pat;
+  integer                 spp, startup;
+  integer                 rep_count;
 
   initial
     begin
@@ -47,26 +46,26 @@ module sd_seq_gen
       nxt_p_srdy = p_srdy;
 
       if (p_srdy & p_drdy)
-	begin
+        begin
 
-	  if (srdy_pat[spp] && (rep_count > 1))
-	    begin
-	      nxt_p_data = p_data + 1;
-	      nxt_p_srdy = 1;
-	    end
-	  else
-	    nxt_p_srdy = 0;
-	end // if (p_srdy & p_drdy)
+          if (srdy_pat[spp] && (rep_count > 1))
+            begin
+              nxt_p_data = p_data + 1;
+              nxt_p_srdy = 1;
+            end
+          else
+            nxt_p_srdy = 0;
+        end // if (p_srdy & p_drdy)
       else if (!p_srdy && (rep_count != 0))
-	begin
-	  if (srdy_pat[spp])
-	    begin
-	      nxt_p_data = p_data + 1;
-	      nxt_p_srdy = 1;
-	    end
-	  else
-	    nxt_p_srdy = 0;
-	end
+        begin
+          if (srdy_pat[spp])
+            begin
+              nxt_p_data = p_data + 1;
+              nxt_p_srdy = 1;
+            end
+          else
+            nxt_p_srdy = 0;
+        end
     end // always @ *
 
   always @(posedge clk)
@@ -81,28 +80,28 @@ module sd_seq_gen
       else
         begin
           if ((p_srdy & p_drdy) | !p_srdy)
-	    spp = (spp + 1) % pat_dep;
+            spp = (spp + 1) % pat_dep;
           
           if (p_srdy & p_drdy)
-	    begin
-	      if (rep_count != -1)
-	        rep_count = rep_count - 1;
-	    end
+            begin
+              if (rep_count != -1)
+                rep_count = rep_count - 1;
+            end
         end
     end
 
   always @(posedge clk)
     begin
       if (reset)
-	begin
-	  p_srdy <= `SDLIB_DELAY 0;
-	  p_data <= `SDLIB_DELAY 0;
-	end
+        begin
+          p_srdy <= `SDLIB_DELAY 0;
+          p_data <= `SDLIB_DELAY 0;
+        end
       else
-	begin
-	  p_srdy <= `SDLIB_DELAY nxt_p_srdy;
-	  p_data <= `SDLIB_DELAY nxt_p_data;
-	end
+        begin
+          p_srdy <= `SDLIB_DELAY nxt_p_srdy;
+          p_data <= `SDLIB_DELAY nxt_p_data;
+        end
     end // always @ (posedge clk)
 
   // simple blocking task to send N words and then wait until complete
@@ -112,7 +111,7 @@ module sd_seq_gen
       rep_count = amount;
       @(posedge clk);
       while (rep_count != 0)
-	@(posedge clk);
+        @(posedge clk);
     end
   endtask
 

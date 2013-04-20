@@ -13,20 +13,21 @@ module bench_dfc;
 
   /*AUTOWIRE*/
   // Beginning of automatic wires (for undeclared instantiated-module outputs)
-  wire [(width)-1:0]    chk_data;               // From dfca of dfc_receiver.v
+  wire [width-1:0]      chk_data;               // From dfca of dfc_receiver.v
   wire                  chk_drdy;               // From chk of sd_seq_check.v
   wire                  chk_srdy;               // From dfca of dfc_receiver.v
   wire [width-1:0]      gen_data;               // From gen of sd_seq_gen.v
   wire                  gen_drdy;               // From driver of dfc_sender.v
   wire                  gen_srdy;               // From gen of sd_seq_gen.v
-  wire [(width)-1:0]    s0_data;                // From driver of dfc_sender.v
-  wire                  s0_srdy;                // From driver of dfc_sender.v
+  wire [width-1:0]      s0_data;                // From driver of dfc_sender.v
+  wire                  s0_vld;                 // From driver of dfc_sender.v
+  wire                  s2_fc_n;                // From dfca of dfc_receiver.v
   // End of automatics
 
   reg [width-1:0]       s1_data, s2_data, s3_data, s4_data;
-  reg                   s1_srdy, s2_srdy, s3_srdy, s4_srdy;
+  reg                   s1_vld, s2_vld, s3_vld, s4_vld;
   //reg                   s0_drdy, , s2_drdy, s3_drdy;
-  reg                   s0_drdy, s1_drdy;
+  reg                   s0_fc_n, s1_fc_n;
   wire                  s2_drdy;
 
 /* sd_seq_gen AUTO_TEMPLATE
@@ -54,28 +55,23 @@ module bench_dfc;
     (/*AUTOINST*/
      // Outputs
      .c_drdy                            (gen_drdy),              // Templated
-     .p_srdy                            (s0_srdy),               // Templated
-     .p_data                            (s0_data[(width)-1:0]),  // Templated
+     .p_vld                             (s0_vld),                // Templated
+     .p_data                            (s0_data[width-1:0]),    // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
      .c_srdy                            (gen_srdy),              // Templated
-     .c_data                            (gen_data[(width)-1:0]), // Templated
-     .p_drdy                            (s0_drdy));               // Templated
+     .c_data                            (gen_data[width-1:0]),   // Templated
+     .p_fc_n                            (s0_fc_n));               // Templated
 
   always @(posedge clk)
     begin
-      { s1_srdy, s1_data } <= { s0_srdy, s0_data };
-      { s2_srdy, s2_data } <= { s1_srdy, s1_data };
-      { s3_srdy, s3_data } <= { s2_srdy, s2_data };
-      { s4_srdy, s4_data } <= { s3_srdy, s3_data };
-      s0_drdy <= s1_drdy;
-      s1_drdy <= s2_drdy;
-/* -----\/----- EXCLUDED -----\/-----
-      s2_drdy <= s3_drdy;
-      s3_drdy <= s4_drdy;
- -----/\----- EXCLUDED -----/\----- */
-      //s1_drdy <= s2_drdy;
+      { s1_vld, s1_data } <= { s0_vld, s0_data };
+      { s2_vld, s2_data } <= { s1_vld, s1_data };
+      { s3_vld, s3_data } <= { s2_vld, s2_data };
+      { s4_vld, s4_data } <= { s3_vld, s3_data };
+      s0_fc_n  <= s1_fc_n;
+      s1_fc_n  <= s2_fc_n;
     end
 
 /* dfc_receiver AUTO_TEMPLATE
@@ -84,17 +80,17 @@ module bench_dfc;
  .p_\(.*\)    (chk_\1[]),
  );
  */
-  dfc_receiver #(.width(width), .depth(8), .delay(3)) dfca
+  dfc_receiver #(.width(width), .depth(8), .threshold(1)) dfca
     (/*AUTOINST*/
      // Outputs
-     .c_drdy                            (s2_drdy),               // Templated
+     .c_fc_n                            (s2_fc_n),               // Templated
      .p_srdy                            (chk_srdy),              // Templated
-     .p_data                            (chk_data[(width)-1:0]), // Templated
+     .p_data                            (chk_data[width-1:0]),   // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
-     .c_srdy                            (s2_srdy),               // Templated
-     .c_data                            (s2_data[(width)-1:0]),  // Templated
+     .c_vld                             (s2_vld),                // Templated
+     .c_data                            (s2_data[width-1:0]),    // Templated
      .p_drdy                            (chk_drdy));              // Templated
   
 
@@ -117,8 +113,12 @@ module bench_dfc;
 
   initial
     begin
+`ifdef MODEL_TECH
+      $wlfdumpvars(0, bench_dfc);
+`else
       $dumpfile("dfc.vcd");
       $dumpvars;
+`endif
       reset = 1;
       #100;
       reset = 0;
@@ -128,23 +128,21 @@ module bench_dfc;
       // burst normal data for 20 cycles
       repeat (40) @(posedge clk);
 
-/* -----\/----- EXCLUDED -----\/-----
-      gen.srdy_pat = 8'h5A;
+      gen.srdy_pat = {4{8'h5A}};
       repeat (20) @(posedge clk);
 
-      chk.drdy_pat = 8'hA5;
+      chk.drdy_pat = {4{8'hA5}};
       repeat (40) @(posedge clk);
 
       // check FIFO overflow
-      gen.srdy_pat = 8'hFD;
-      chk.drdy_pat = 8'h03;
+      gen.srdy_pat = {4{8'hFD}};
+      chk.drdy_pat = {4{8'h03}};
       repeat (100) @(posedge clk);
 
       // check FIFO underflow
-      gen.srdy_pat = 8'h11;
-      chk.drdy_pat = 8'hEE;
+      gen.srdy_pat = {4{8'h11}};
+      chk.drdy_pat = {4{8'hEE}};
       repeat (100) @(posedge clk);
- -----/\----- EXCLUDED -----/\----- */
 
       // Run out the remainder of the repeat count
       gen.srdy_pat = 32'hFFFF0000;

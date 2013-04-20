@@ -1,0 +1,11 @@
+#!/bin/bash
+
+vlib work
+vlog -64 -sv -permissive -timescale "1ns/1ps" +define+SDLIB_DELAY +define+SDLIB_CLOCKING="posedge clk" -f dfc.vf
+#if [ "$?" = "0" ]; then
+#vopt +acc=npr+bench work.bench
+#fi
+if [ "$?" = "0" ]; then
+vsim -c -voptargs="+acc=npr+bench_dfc." -do "run -all; quit" work.bench_dfc
+fi
+

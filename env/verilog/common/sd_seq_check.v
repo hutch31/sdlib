@@ -17,14 +17,13 @@
 `endif
 
 module sd_seq_check
-  #(parameter width=8)
+  #(parameter width=8,
+    parameter pat_dep=8)
   (input clk,
    input reset,
    input          c_srdy,
    output reg     c_drdy,
    input [width-1:0] c_data);
-
-  parameter pat_dep = 8;
 
   reg [width-1:0]    last_seq, next_seq;
   reg                first;
