@@ -15,14 +15,14 @@
 module dfc_sender
   #(parameter width=8)
     (
-     input       clk,
-     input       reset,
-     input       c_srdy,
-     output      c_drdy,
-     input [width-1:0] c_data,
+     input                  clk,
+     input                  reset,
+     input                  c_srdy,
+     output                 c_drdy,
+     input [width-1:0]      c_data,
 
-     output reg     p_srdy,
-     input          p_drdy,
+     output reg             p_vld,
+     input                  p_fc_n,
      output reg [width-1:0] p_data
      );
 
@@ -33,19 +33,19 @@ module dfc_sender
       if (reset)
         begin
           fc_active <= 1;
-          p_srdy    <= 0;
+          p_vld    <= 0;
         end
       else
         begin
-          if (fc_active & p_drdy)
+          if (fc_active & p_fc_n)
             fc_active <= 0;
-          else if (!fc_active & !p_drdy)
+          else if (!fc_active & !p_fc_n)
             fc_active <= 1;
 
           if (c_srdy & !fc_active)
-              p_srdy <= 1;
+              p_vld <= 1;
           else
-              p_srdy <= 0;
+              p_vld <= 0;
         end // else: !if(reset)
     end // always @ (posedge clk)
 

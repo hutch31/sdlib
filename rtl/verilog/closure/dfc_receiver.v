@@ -26,23 +26,54 @@
 module dfc_receiver
   #(parameter width=8,
     parameter depth=8,
-    parameter delay=3)
+    parameter threshold=3)
     (
-     input       clk,
-     input       reset,
-     input       c_srdy,
-     output reg     c_drdy,
-     input [width-1:0] c_data,
+     input              clk,
+     input              reset,
+     input              c_vld,
+     output reg         c_fc_n,
+     input [width-1:0]  c_data,
 
-     output      p_srdy,
-     input       p_drdy,
-     output  [width-1:0] p_data
+     output             p_srdy,
+     input              p_drdy,
+     output [width-1:0] p_data,
+
+     output             overflow
      );
 
   localparam asz=$clog2(depth+1);
 
+  /*AUTOWIRE*/
+  // Beginning of automatic wires (for undeclared instantiated-module outputs)
+  wire [width-1:0]      f_data;                 // From ctl of dfc_receiver_ctl.v
+  wire                  f_drdy;                 // From fifo_s of sd_fifo_c.v
+  wire                  f_srdy;                 // From ctl of dfc_receiver_ctl.v
+  logic [asz-1:0]       f_usage;                // From fifo_s of sd_fifo_c.v
+  // End of automatics
+
+  dfc_receiver_ctl #(/*AUTOINSTPARAM*/
+                     // Parameters
+                     .width             (width),
+                     .depth             (depth),
+                     .asz               (asz),
+                     .threshold         (threshold))
+  ctl
+    (/*AUTOINST*/
+     // Outputs
+     .c_fc_n                            (c_fc_n),
+     .f_srdy                            (f_srdy),
+     .f_data                            (f_data[width-1:0]),
+     .overflow                          (overflow),
+     // Inputs
+     .clk                               (clk),
+     .reset                             (reset),
+     .c_vld                             (c_vld),
+     .c_data                            (c_data[width-1:0]),
+     .f_drdy                            (f_drdy),
+     .f_usage                           (f_usage[asz-1:0]));
+/* -----\/----- EXCLUDED -----\/-----
   reg                    l_srdy;
-  reg                    l_drdy;
+  wire                   l_drdy;
   reg [width-1:0]        l_data;
   wire [asz-1:0]         lcl_usage;
       
@@ -52,38 +83,40 @@ module dfc_receiver
       if (reset)
         begin
           l_srdy <= 0;
-          c_drdy <= 0;
+          c_fc_n <= 0;
         end
       else
         begin
-          l_srdy <= c_srdy;
-          c_drdy <= (lcl_usage < delay);
+          l_srdy <= c_vld;
+          c_fc_n <= (lcl_usage < threshold);
         end
     end // always @ (posedge clk)
 
   always @(posedge clk)
     l_data <= c_data;
 
+  assign overflow = l_srdy & !l_drdy;
+ -----/\----- EXCLUDED -----/\----- */
+
 /* sd_fifo_c AUTO_TEMPLATE
  (
      .p_usage (),
-     .usage (lcl_usage),
-     .c_drdy (),
-     .c_\(.*\)   (l_\1[]),
+     .usage (f_usage[]),
+     .c_\(.*\)   (f_\1[]),
  );
  */
-  sd_fifo_c #(.width(width), .depth(depth)) fifo_s
+  sd_fifo_c #(.width(width), .depth(depth), .usz(asz)) fifo_s
     (/*AUTOINST*/
      // Outputs
-     .c_drdy                            (),                      // Templated
-     .usage                             (lcl_usage),             // Templated
+     .c_drdy                            (f_drdy),                // Templated
+     .usage                             (f_usage[asz-1:0]),      // Templated
      .p_srdy                            (p_srdy),
-     .p_data                            (p_data[(width)-1:0]),
+     .p_data                            (p_data[width-1:0]),
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
-     .c_srdy                            (l_srdy),                // Templated
-     .c_data                            (l_data[(width)-1:0]),   // Templated
+     .c_srdy                            (f_srdy),                // Templated
+     .c_data                            (f_data[width-1:0]),     // Templated
      .p_drdy                            (p_drdy));
   
 endmodule // dfc_adapter
