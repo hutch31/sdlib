@@ -45,8 +45,8 @@ module sd_fifo_c
      output  [width-1:0] p_data
      );
 
-  localparam npt = (depth != (2**asz));
   localparam asz = $clog2(depth);
+  localparam npt = (depth != (2**asz));
 
   logic [asz-1:0]           wrptr, nxt_wrptr;
   logic [asz-1:0]           wrptr_p1;
