@@ -5,7 +5,7 @@ module bench_dfc;
   reg clk, reset;
 
   localparam width = 8;
-  localparam depth = 32;
+  localparam depth = 8;
   localparam asz = $clog2(depth);
 
   initial clk = 0;
@@ -80,7 +80,7 @@ module bench_dfc;
  .p_\(.*\)    (chk_\1[]),
  );
  */
-  dfc_receiver #(.width(width), .depth(8), .threshold(1)) dfca
+  dfc_receiver #(.width(width), .depth(depth), .threshold(1)) dfca
     (/*AUTOINST*/
      // Outputs
      .c_fc_n                            (s2_fc_n),               // Templated
@@ -109,7 +109,7 @@ module bench_dfc;
      .c_srdy                            (chk_srdy),              // Templated
      .c_data                            (chk_data[width-1:0]));   // Templated
 
-  
+ 
 
   initial
     begin
@@ -126,9 +126,16 @@ module bench_dfc;
       gen.rep_count = 1000;
 
       // burst normal data for 20 cycles
+      gen.srdy_pat = 32'hFFFFFFFF;
+      chk.drdy_pat = 32'hFFFFFFFF;
       repeat (40) @(posedge clk);
 
+      // Shut off receiver and make sure fifo does not overflow
+      chk.drdy_pat = 32'h0;
+      repeat (depth*2) @(posedge clk);
+
       gen.srdy_pat = {4{8'h5A}};
+      chk.drdy_pat = 32'hFFFFFFFF;
       repeat (20) @(posedge clk);
 
       chk.drdy_pat = {4{8'hA5}};
