@@ -1,7 +1,7 @@
 Srdy-Drdy Interface Library
 ===========================
 Guy Hutchison (ghutchis@gmail.com)
-July 2012
+v1.1, April 22nd, 2013
 
 Introduction
 ------------
@@ -77,10 +77,27 @@ There are situations in which the assertion rules cannot be met, for example a s
 
 The simplest way to resolve this is to take any area where the assertion rules cannot be met and "wrap" it with compliant interfaces.  This is done by default if designers use the timing closure interfaces, all of which meet the assertion rules.
 
+Top-Level Protocols
+^^^^^^^^^^^^^^^^^^^
+
+While SDI is a very good intra-block signalling protocol, for large chips a different top-level
+signalling protocol may be required.  If transport delays between top level blocks are large enough,
+it may be necessary to add "repeaters" (banks of flops) on the data signals to meet timing.
+
+The SD library has a pair of adapters for Delayed Flow Control (DFC), which assumes that response to
+a flow control signal will take more than one cycle.  This involves two adapters.  One is a <<dfc_sender>>,
+which is a straightforward adapter which registers the input and output signals and changes the
+signal names.
+
+The other adapter is <<dfc_receiver>>, which pairs some control logic with a small FIFO which is used to
+absorb the in-transit data in the event that the receivers' producer interface asserts flow control.
+
+The DFC adapters are described in more detail in the Closure section.
+
 Usage
 ~~~~~
 
-The most common usage pattern is to use the sd_input module for all interfaces where the design block is a destination, and the sd_output for all interfaces where the design block is a source.  This provides two major benefits:
+The most common usage pattern is to use the <<sd_input>> module for all interfaces where the design block is a destination, and the <<sd_output>> for all interfaces where the design block is a source.  This provides two major benefits:
 
   - Timing closure (all module outputs are registered)
   - Interface consistency (all assertion rules are met)
@@ -124,7 +141,7 @@ Building a multistage pipeline within a design block can also be simplified by
 using SDI components.  The sd_output block can also be used as an inter-stage
 timing closure element for the datapath.  This does create a potential critical
 path on the drdy signal across the block, as this signal will not be registered
-until it hits the sd_input block in the first stage, however each sd_output
+until it hits the <<sd_input>> block in the first stage, however each sd_output
 stage only adds a single gate delay to the path.
 
 Below is a sample three-stage pipeline.  The two sd_output blocks before the
@@ -203,6 +220,7 @@ all blocks should use an RO style and superblocks (floorplan units) should use R
 For components which support synchronization across clock domains, the sync flops are
 all prefixed with hgff_ for replacement during synthesis with high-gain flip flops.
 
+[[sd_input]]
 sd_input
 ~~~~~~~~
 
@@ -218,6 +236,7 @@ closure for this input.
 | width | 2+ | Width of the data input/output, in bits
 |=============
 
+[[sd_output]]
 sd_output
 ~~~~~~~~~
 
@@ -232,6 +251,7 @@ and p_data.
 | width | 2+ | Width of the data input/output, in bits
 |=============
 
+[[sd_iohalf]]
 sd_iohalf
 ~~~~~~~~~
 
@@ -247,6 +267,7 @@ low-rate interfaces.
 | width | 2+ | Width of the data input/output, in bits
 |=============
 
+[[sd_iofull]]
 sd_iofull
 ~~~~~~~~~
 
@@ -287,6 +308,86 @@ All s_* inputs to these blocks are false paths for timing closure.
 | width | 2+ | Width of the data input/output, in bits
 |=============
 
+[[dfc_sender]]
+dfc_sender
+~~~~~~~~~~
+
+Delayed Flow Control conversion block.  Converts between srdy-drdy interface and
+valid/flow control interface.  Flow control is declared as active low so that it
+retains the same semantics as drdy (transmit on high).
+
+The DFC sender block is quite simple, and effectively is a stripped-down sd_output
+block which renames the two signals.  The DFC sender should be used in place of
+an <<sd_output>> or <<sd_iofull>> block.
+
+NOTE:  If being used to replace an sd_iofull block, the p_fc_n signal is not
+       registered by the module and should be registered by the designer.
+
+.dfc_sender Parameters
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+|=============
+
+[[dfc_receiver]]
+dfc_receiver
+~~~~~~~~~~~~
+
+Delayed Flow Control conversion block.  Converts between srdy-drdy interface and
+valid/flow control interface.  Flow control is declared as active low so that it
+retains the same semantics as drdy (transmit on high).
+
+The DFC Receiver block is the companion block to the DFC sender block above.
+It converts back between a valid/flow control interface and an srdy-drdy 
+interface.  In this function it replaces an <<sd_input>> or <<sd_iofull>> block.
+
+NOTE:  If being used to replace an sd_iofull block, the c_fc_n signal is not
+       registered by the module and should be registered by the designer.
+
+Because multiple words could be outstanding in the pipeline, some amount of data
+may show up even after the flow control signal is asserted.  Because of this the
+dfc_receiver block integrates a small FIFO to hold the in-flight data between
+the time the flow control signal is asserted and the time data ceases to arrive.
+
+The threshold value examines the FIFO usage and decides when to assert flow
+control.  During steady-state operation (p_drdy is asserted), the FIFO usage
+should remain a constant 2 words (using <<sd_fifo_c>>), and the threshold should
+be set to one more (3), otherwise flow control will be needlessly asserted.
+
+The size of the FIFO should be set to the size of the thresold value plus the
+number of repeater flop banks added between dfc_sender and dfc_receiver.
+Note that this includes not only the flops on the valid path but those on
+the returning flow control path.
+
+NOTE:  For example, If the valid path was registered three times between sender and
+       receiver and the fc_n signal registered once, then the FIFO size
+       should be 3 + 1 + 3 = 7
+
+.dfc_receiver Parameters
+[options="header",cols="3,5,10"]
+|===========================================================================
+| Name      | Valid range          | Description
+| width     | 2+                   | Width of the data input/output, in bits
+| depth     | RT delay + threshold | Depth of the overflow fifo, in words
+| threshold | 3+                   | Threshold at which to assert FC 
+|===========================================================================
+
+dfc_receiver_ctl
+^^^^^^^^^^^^^^^^
+
+In some cases a module may already contain a FIFO at its input; in this case it 
+would be inefficient to put a 2nd FIFO immediately in front of it.  For modules
+which already contain an input FIFO, the dfc_receiver_ctl module contains only
+the control logic and expects the input usage from an srdy-drdy FIFO.
+
+The dfc_receiver_ctl takes the same parameters as dfc_receiver, but its FIFO-side
+interface signals all begin with f_.
+
+NOTE:  If the FIFO is shared with functional logic it must be sized for both the
+       logic needs and flow control requirements.  The flow control requirement
+       is logic steady state + round trip delay as above.
+
 Buffers
 -------
 
@@ -301,6 +402,7 @@ ECC generate/correct blocks can also be placed inside this wrapper if error
 correction is needed (see https://sourceforge.net/projects/xtgenerate/ for ECC
 generator/checker).
 
+[[sd_fifo_s]]
 sd_fifo_s
 ~~~~~~~~~
 
@@ -395,6 +497,25 @@ c_commit must be held until c_drdy acknowledges the transaction.
 
 c_abort should be asserted when c_srdy is deasserted, at which point the write pointer 
 will revert to its last saved value.
+
+[[sd_fifo_c]]
+sd_fifo_c
+~~~~~~~~~
+
+The sd_fifo_c ("compact" or "count") FIFO is a synchronous-only FIFO for small,
+non-power-of-two FIFOs.  It maintains an internal up-down counter that it uses for
+empty/full detection.  The sd_fifo_c does not have separate head/tail blocks, as it 
+intended to be used as a flop-only FIFO.
+
+Other than the above it is functionally identical to the <<sd_fifo_s>>.
+
+.sd_fifo_s Parameter description
+[options="header",cols="3,3,10"]
+|=============
+| Name | Valid range | Description
+| width | 2+ | Width of the data input/output, in bits
+| depth | 2+ | Depth of the FIFO.  Can be any integer value.
+|=============
 
 FIFO Sharing
 ^^^^^^^^^^^^
