@@ -30,7 +30,7 @@ module dfc_receiver_ctl
      input                    clk,
      input                    reset,
      input                    c_vld,
-     output reg               c_fc_n,
+     output                   c_fc_n,
      input [width-1:0]        c_data,
 
      // Fifo read/write control
@@ -42,18 +42,18 @@ module dfc_receiver_ctl
      output                   overflow
      );
 
+  assign c_fc_n = f_usage < threshold;
+  
   // register inputs and outputs
   always @(posedge clk)
     begin
       if (reset)
         begin
           f_srdy <= 0;
-          c_fc_n <= 0;
         end
       else
         begin
           f_srdy <= c_vld;
-          c_fc_n <= (f_usage < threshold);
         end
     end // always @ (posedge clk)
 

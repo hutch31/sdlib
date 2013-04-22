@@ -32,30 +32,24 @@ module dfc_sender
     begin
       if (reset)
         begin
-          fc_active <= 1;
           p_vld    <= 0;
         end
       else
         begin
-          if (fc_active & p_fc_n)
-            fc_active <= 0;
-          else if (!fc_active & !p_fc_n)
-            fc_active <= 1;
-
-          if (c_srdy & !fc_active)
-              p_vld <= 1;
+          if (c_srdy & p_fc_n)
+            p_vld <= 1;
           else
-              p_vld <= 0;
+            p_vld <= 0;
         end // else: !if(reset)
     end // always @ (posedge clk)
 
   always @(posedge clk)
     begin
-      if (c_srdy & !fc_active)
+      if (c_srdy & p_fc_n)
         p_data <= c_data;
     end
 
-  assign c_drdy = !fc_active;
+  assign c_drdy = p_fc_n;
 
 endmodule // dfc_adapter
 

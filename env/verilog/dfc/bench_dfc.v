@@ -5,8 +5,12 @@ module bench_dfc;
   reg clk, reset;
 
   localparam width = 8;
-  localparam depth = 8;
   localparam asz = $clog2(depth);
+
+  parameter valid_delay = 6;
+  parameter fc_delay = 8;
+  parameter threshold = 3;
+  localparam depth = (valid_delay+fc_delay+threshold);
 
   initial clk = 0;
   always #10 clk = ~clk;
@@ -19,16 +23,16 @@ module bench_dfc;
   wire [width-1:0]      gen_data;               // From gen of sd_seq_gen.v
   wire                  gen_drdy;               // From driver of dfc_sender.v
   wire                  gen_srdy;               // From gen of sd_seq_gen.v
-  wire [width-1:0]      s0_data;                // From driver of dfc_sender.v
-  wire                  s0_vld;                 // From driver of dfc_sender.v
-  wire                  s2_fc_n;                // From dfca of dfc_receiver.v
+  wire                  overflow;               // From dfca of dfc_receiver.v
   // End of automatics
 
-  reg [width-1:0]       s1_data, s2_data, s3_data, s4_data;
-  reg                   s1_vld, s2_vld, s3_vld, s4_vld;
+  logic [valid_delay-1:0][width-1:0] s_data;
+  logic [valid_delay-1:0]            s_vld;
+  //reg                   s1_vld, s2_vld, s3_vld, s4_vld;
   //reg                   s0_drdy, , s2_drdy, s3_drdy;
-  reg                   s0_fc_n, s1_fc_n;
-  wire                  s2_drdy;
+  //reg                   s0_fc_n, s1_fc_n;
+  logic [fc_delay-1:0]               s_fc_n;
+  reg                   failed;
 
 /* sd_seq_gen AUTO_TEMPLATE
  (
@@ -48,49 +52,62 @@ module bench_dfc;
 /* dfc_sender AUTO_TEMPLATE
  (
  .c_\(.*\)   (gen_\1[]),
- .p_\(.*\)    (s0_\1[]),
+ .p_\(.*\)    (s_\1[0]),
  );
  */
   dfc_sender #(.width (width)) driver
     (/*AUTOINST*/
      // Outputs
      .c_drdy                            (gen_drdy),              // Templated
-     .p_vld                             (s0_vld),                // Templated
-     .p_data                            (s0_data[width-1:0]),    // Templated
+     .p_vld                             (s_vld[0]),              // Templated
+     .p_data                            (s_data[0]),             // Templated
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
      .c_srdy                            (gen_srdy),              // Templated
      .c_data                            (gen_data[width-1:0]),   // Templated
-     .p_fc_n                            (s0_fc_n));               // Templated
+     .p_fc_n                            (s_fc_n[0]));             // Templated
 
-  always @(posedge clk)
-    begin
-      { s1_vld, s1_data } <= { s0_vld, s0_data };
-      { s2_vld, s2_data } <= { s1_vld, s1_data };
-      { s3_vld, s3_data } <= { s2_vld, s2_data };
-      { s4_vld, s4_data } <= { s3_vld, s3_data };
-      s0_fc_n  <= s1_fc_n;
-      s1_fc_n  <= s2_fc_n;
+  genvar                vd, fd;
+  
+  generate for (vd=1; vd<valid_delay; vd++)
+    begin : valid_loop
+      always @(posedge clk)
+        begin
+          s_vld[vd] <= s_vld[vd-1];
+          s_data[vd] <= s_data[vd-1];
+        end
     end
+  endgenerate
 
+  generate for (fd=0; fd<(fc_delay-1); fd++)
+    begin : flow_lop
+      always @(posedge clk)
+        begin
+          s_fc_n[fd] <= s_fc_n[fd+1];
+        end
+    end
+  endgenerate
+  
 /* dfc_receiver AUTO_TEMPLATE
  (
- .c_\(.*\)    (s2_\1[]),
+ .c_fc_n      (s_fc_n[fc_delay-1]),
+ .c_\(.*\)    (s_\1[valid_delay-1]),
  .p_\(.*\)    (chk_\1[]),
  );
  */
-  dfc_receiver #(.width(width), .depth(depth), .threshold(1)) dfca
+  dfc_receiver #(.width(width), .depth(depth), .threshold(threshold)) dfca
     (/*AUTOINST*/
      // Outputs
-     .c_fc_n                            (s2_fc_n),               // Templated
+     .c_fc_n                            (s_fc_n[fc_delay-1]),    // Templated
      .p_srdy                            (chk_srdy),              // Templated
      .p_data                            (chk_data[width-1:0]),   // Templated
+     .overflow                          (overflow),
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
-     .c_vld                             (s2_vld),                // Templated
-     .c_data                            (s2_data[width-1:0]),    // Templated
+     .c_vld                             (s_vld[valid_delay-1]),  // Templated
+     .c_data                            (s_data[valid_delay-1]), // Templated
      .p_drdy                            (chk_drdy));              // Templated
   
 
@@ -120,6 +137,7 @@ module bench_dfc;
       $dumpvars;
 `endif
       reset = 1;
+      failed = 0;
       #100;
       reset = 0;
 
@@ -128,11 +146,23 @@ module bench_dfc;
       // burst normal data for 20 cycles
       gen.srdy_pat = 32'hFFFFFFFF;
       chk.drdy_pat = 32'hFFFFFFFF;
-      repeat (40) @(posedge clk);
+      #200;
+      
+      repeat (100) 
+        begin
+          @(posedge clk);
+          if ((gen_srdy && (gen_drdy !== 1'b1)) && !failed)
+            begin
+              $display ("%t: ERROR: Flow control asserted",$time);
+              failed = 1;
+            end
+        end
 
       // Shut off receiver and make sure fifo does not overflow
+      $display ("%t: Shutting off receiver",$time);
       chk.drdy_pat = 32'h0;
-      repeat (depth*2) @(posedge clk);
+      repeat (40) @(posedge clk);
+      $display ("%t: Enabling receiver",$time);
 
       gen.srdy_pat = {4{8'h5A}};
       chk.drdy_pat = 32'hFFFFFFFF;
@@ -164,7 +194,7 @@ module bench_dfc;
         end
       join
 
-      if (chk.ok_cnt >= 1000)
+      if ((chk.ok_cnt >= 1000) && !failed)
         $display ("----- TEST PASSED -----");
       else
         begin
