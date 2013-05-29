@@ -54,7 +54,6 @@ module sd_fifo_tail_s
   reg [asz:0]           rdptr;
   reg [asz:0]           nxt_rdptr;
   reg [asz:0]           rdptr_p1;
-  reg                   empty;
   reg                   nxt_p_srdy;
   wire [asz:0]          wrptr;
 
@@ -64,8 +63,6 @@ module sd_fifo_tail_s
     begin
       rdptr_p1 = rdptr + 1;
       
-      empty = (wrptr == rdptr);
-
       if (p_drdy & p_srdy)
         nxt_rdptr = rdptr_p1;
       else
