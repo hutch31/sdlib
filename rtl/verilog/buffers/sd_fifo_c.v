@@ -60,7 +60,7 @@ module sd_fifo_c
   logic [asz-1:0]           r_addr;
   
   assign c_drdy = !full;
-  assign wr_addr = wrptr[asz-1:0];
+  //assign wr_addr = wrptr[asz-1:0];
    
   always @*
     begin
