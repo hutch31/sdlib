@@ -1,0 +1,8 @@
+vlib work
+vmap work work
+vlog -novopt -sv ../../../rtl/verilog/buffers/sd_fifo_c.v ../../../rtl/verilog/closure/sd_input.v ../../../rtl/verilog/closure/sd_output.v ../../../rtl/verilog/closure/sd_iofull.v  
+vlog -novopt -sv ../common/fv_fifo.sv
+vlog -novopt -sv wrap_fifo_c.sv
+vlog -novopt -sv ../common/generic_twoport.sv bind.sv -mfcu -cuname fv_top
+qformal -c -od SVA_RES -do formal_compile.do
+
