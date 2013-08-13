@@ -51,7 +51,7 @@
 module sd_fifo_s
   #(parameter width=8,
     parameter depth=16,
-    parameter async=1,
+    parameter async=0,
     parameter asz=$clog2(depth)
     )
     (
