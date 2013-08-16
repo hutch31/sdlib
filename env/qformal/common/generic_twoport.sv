@@ -1,5 +1,6 @@
 module generic_twoport
-  #(parameter width=8)
+  #(parameter width=8,
+    parameter data_movement=1)
   (
    input             clk,
    input             reset,
@@ -32,6 +33,8 @@ module generic_twoport
   endproperty
   InSrdyDrdyDataHold_c: assume property (InSrdyDrdyDataHold);
 
+  generate if (data_movement == 1)
+    begin : data_movement_blk
   // Srdy must be asserted at least once per 3 cycles
   property DataAvailable;
     @(posedge clk) disable iff (reset)
@@ -45,16 +48,8 @@ module generic_twoport
       (!p_drdy) |-> ##[1:2] p_drdy;
   endproperty
   DataDrain_c : assume property (DataDrain);
-
-/* -----\/----- EXCLUDED -----\/-----
-  // Color input data such that each valid data word is
-  // the previous data word plus one
-  property IncrementingData;
-    @(posedge clk) disable iff (reset)
-      (c_srdy && c_drdy) |-> ##1 (c_data == $past(c_data) + 1);
-  endproperty
-  
- -----/\----- EXCLUDED -----/\----- */
+    end // block: data_movement_blk
+  endgenerate
 
   //--------------------------------------------------
   // Assertions
