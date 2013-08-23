@@ -1,6 +1,6 @@
-`define TEST_IOFULL
+`define TEST_FIFO_C
 module wrap_fifo_c
-  #(parameter usz=3)
+  #(parameter depth=6, parameter usz=$clog2(depth+1))
   (/*AUTOINPUT*/
   // Beginning of automatic inputs (from unused autoinst inputs)
   input [7:0]           c_data,                 // To finst of sd_fifo_c.v, ...
@@ -19,7 +19,6 @@ module wrap_fifo_c
    );
 
   localparam width = 8;
-  localparam depth = 5;
 
 `ifdef TEST_FIFO_C
   sd_fifo_c #(// Parameters
