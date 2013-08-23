@@ -36,7 +36,8 @@
 module behave2p_mem
   #(parameter width=8,
     parameter depth=256,
-    parameter addr_sz=$clog2(depth))
+    parameter addr_sz=$clog2(depth),
+    parameter reg_rd_addr=1)
   (/*AUTOARG*/
   // Outputs
   d_out,
@@ -50,7 +51,7 @@ module behave2p_mem
 
   output [width-1:0]  d_out;
 
-  reg [addr_sz-1:0] r_addr;
+  logic [addr_sz-1:0] r_addr;
 
   reg [width-1:0]   array[0:depth-1];
   
@@ -62,13 +63,21 @@ module behave2p_mem
         end
     end
 
-  always @(posedge rd_clk)
-    begin
-      if (rd_en)
+  generate if (reg_rd_addr == 1)
+    begin : gen_reg_rd
+      always @(posedge rd_clk)
         begin
-          r_addr <= `SDLIB_DELAY rd_addr;
-        end
-    end // always @ (posedge clk)
+          if (rd_en)
+            begin
+              r_addr <= `SDLIB_DELAY rd_addr;
+            end
+        end // always @ (posedge clk)
+    end
+  else
+    begin : gen_noreg_rd
+      assign r_addr = rd_addr;
+    end
+  endgenerate
 
   assign d_out = array[r_addr];
 

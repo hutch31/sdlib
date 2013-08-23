@@ -169,12 +169,19 @@ module sd_fifo_c
         end
    end // always @ (posedge clk)
 
-  always @(posedge clk)
-    begin
-      if (wr_en)
-        mem[wrptr] <= c_data;
-    end
-
-  assign p_data = mem[rdptr];
+  behave2p_mem #(.width (width),
+                 .depth (depth),
+                 .addr_sz (asz),
+                 .reg_rd_addr (0))
+  mem2p
+  (
+   .wr_en (wr_en),
+   .rd_en  (1'b1),
+   .wr_clk (clk),
+   .rd_clk (1'b0),
+   .d_in   (c_data),
+   .wr_addr (wrptr),
+   .rd_addr (rdptr),
+   .d_out   (p_data));
   
 endmodule
