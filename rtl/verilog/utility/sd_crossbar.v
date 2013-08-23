@@ -160,14 +160,14 @@ module sd_crossbar
         // Provide two slots of output buffering on the crossbar
         // Only schedule a transaction for this output if at least
         // one slot is free
-        logic [1:0] usage;
+        logic [$clog2(3+ipipe)-1:0] usage;
         logic       oflow_drdy;
         assign out_accept[y] = (usage < 2);
         assign oflow_check[y] = ~oflow_drdy & r_xbarvld[y];
         
         sd_fifo_c #(.width(width), .depth(2+ipipe)) twoslot
           (
-           .usage                       (usage[1:0]),
+           .usage                       (usage),
            .clk                         (clk),
            .reset                       (reset),
            
@@ -183,7 +183,27 @@ module sd_crossbar
   endgenerate
 
   generate
-    if (ipipe == 1)
+    if (ipipe > 1)
+      begin : multi_pipeline
+        logic [ipipe-1:0][outputs-1:0][width-1:0] xbdata;
+        logic [ipipe-1:0][outputs-1:0]            xbvld;
+        integer                                   p;
+
+        always @(posedge clk)
+          begin
+            for (p=0; p<(ipipe-1); p=p+1)
+              begin
+                xbdata[p] <= xbdata[p+1];
+                xbvld[p]  <= xbvld[p+1];
+              end
+            xbdata[ipipe-1] <= xbarout;
+            xbvld[ipipe-1]  <= xbarvld;
+          end
+
+        assign r_xbarout = xbdata[0];
+        assign r_xbarvld = xbvld[0];
+      end
+    else if (ipipe == 1)
       begin : internal_pipeline
         always @(posedge clk)
           begin
