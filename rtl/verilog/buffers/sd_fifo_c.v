@@ -78,10 +78,10 @@ module sd_fifo_c
   logic [asz-1:0]           rdptr_p1;
   logic                     full;
   logic [usz-1:0]           nxt_usage;
-  logic [width-1:0]         mem [0:depth-1];
+  logic [width-1:0]         mem [0:depth-1]; // cn_lint_off_line CN_UNUSED_REG
   logic                     wr_en, rd_en;
   logic                     nxt_p_srdy;
-  logic [asz-1:0]           r_addr;
+  logic [asz-1:0]           r_addr; // cn_lint_off_line CN_UNUSED_REG
   
   assign c_drdy = !full;
   //assign wr_addr = wrptr[asz-1:0];
@@ -90,7 +90,7 @@ module sd_fifo_c
     begin
       if (npt)
         begin
-          if (wrptr == (depth-1))
+          if (wrptr == (depth-1)) // cn_lint_off_line CN_UNEQUAL_LEN
             wrptr_p1 = 0;
           else
             wrptr_p1 =  wrptr + 1;
@@ -112,7 +112,7 @@ module sd_fifo_c
     begin
       if (npt)
         begin
-          if (rdptr == (depth-1))
+          if (rdptr == (depth-1)) // cn_lint_off_line CN_UNEQUAL_LEN
             rdptr_p1 = 0;
           else
             rdptr_p1 =  rdptr + 1;

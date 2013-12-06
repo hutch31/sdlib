@@ -97,7 +97,7 @@ module sd_fifo_tail_s
       if (wrptr[asz] == rdptr[asz])
         p_usage = wrptr - rdptr;
       else
-        p_usage = (wrptr[asz-1:0] + depth) - rdptr[asz-1:0];
+        p_usage = (wrptr[asz-1:0] + depth) - rdptr[asz-1:0]; // cn_lint_off_line CN_UNEQUAL_LEN
     end
       
   always @(`SDLIB_CLOCKING)
@@ -146,7 +146,7 @@ module sd_fifo_tail_s
     begin
       bin2grey[asz] = bin_in[asz];
       for (b=0; b<asz; b=b+1)
-        bin2grey[b] = bin_in[b] ^ bin_in[b+1];
+        bin2grey[b] = bin_in[b] ^ bin_in[b+1]; // cn_lint_off_line CN_RANGE_UFLOW
     end
   endfunction // for
 
@@ -156,7 +156,7 @@ module sd_fifo_tail_s
     begin
       grey2bin[asz] = grey_in[asz];
       for (b=asz-1; b>=0; b=b-1)
-        grey2bin[b] = grey_in[b] ^ grey2bin[b+1];
+        grey2bin[b] = grey_in[b] ^ grey2bin[b+1]; // cn_lint_off_line CN_RANGE_UFLOW
     end
   endfunction
 

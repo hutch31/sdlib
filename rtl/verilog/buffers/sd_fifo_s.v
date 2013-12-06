@@ -76,7 +76,7 @@ module sd_fifo_s
   wire [asz:0]          wrptr_head, wrptr_head_sync;
   wire [asz-1:0]        rd_addr, wr_addr;
 
-  behave2p_mem #(width, depth) mem2p
+  behave2p_mem #(.width(width), .depth(depth)) mem2p
     (.d_out (p_data),
      .wr_en (wr_en),
      .rd_en (rd_en),
@@ -87,7 +87,7 @@ module sd_fifo_s
      .d_in    (c_data));
 
 
-  sd_fifo_head_s #(depth, async) head
+  sd_fifo_head_s #(.depth(depth), .async(async)) head
     (
      // Outputs
      .c_drdy                            (c_drdy),
@@ -101,7 +101,7 @@ module sd_fifo_s
      .c_srdy                            (c_srdy),
      .rdptr_tail                        (rdptr_tail_sync));
 
-  sd_fifo_tail_s #(depth, async) tail
+  sd_fifo_tail_s #(.depth(depth), .async(async)) tail
     (
      // Outputs
      .rdptr_tail                        (rdptr_tail),

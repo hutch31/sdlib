@@ -90,7 +90,7 @@ module sd_rrmux
    input [(width*inputs)-1:0] c_data,
    input [inputs-1:0]      c_srdy,
    output  [inputs-1:0]    c_drdy,
-   input                   c_rearb,  // for use with mode 2 only
+   input                   c_rearb,  // cn_lint_off_line CN_PARTIAL_IN
 
    output reg [width-1:0]  p_data,
    output [inputs-1:0]     p_grant,
@@ -102,7 +102,7 @@ module sd_rrmux
   reg [inputs-1:0]    nxt_rr_state;
 
   wire [width-1:0]     rr_mux_grid [0:inputs-1];
-  reg                  rr_locked;
+  reg                  rr_locked; // cn_lint_off_line CN_UNDRIVEN_NET
   genvar               i;
   integer              j;
 
@@ -172,9 +172,9 @@ module sd_rrmux
     begin
       if ((mode ==  1) & (|(c_srdy & rr_state)))
         nxt_rr_state = rr_state;
-      else if ((mode == 0) && !p_drdy && !fast_arb)
+      else if ((mode == 0) && !p_drdy && (fast_arb == 0))
         nxt_rr_state = rr_state;
-      else if ((mode == 0) && |(rr_state & c_srdy) && !p_drdy && fast_arb)
+      else if ((mode == 0) && |(rr_state & c_srdy) && !p_drdy && (fast_arb != 0))
         nxt_rr_state = rr_state;
       else if ((mode == 2) & (rr_locked | (|(c_srdy & rr_state))))
         nxt_rr_state = rr_state;

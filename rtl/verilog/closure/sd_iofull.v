@@ -49,13 +49,13 @@ module sd_iofull
    output [width-1:0] p_data
    );
 
-  wire                i_irdy, i_drdy;
+  wire                i_drdy;
   wire [width-1:0]    i_data;
   wire                i_srdy;
 
   generate if (isinput == 1)
     begin : input_config
-      sd_output #(width) in
+      sd_output #(.width(width)) in
         (
          .ic_drdy                           (c_drdy),
          .p_srdy                            (i_srdy),
@@ -66,7 +66,7 @@ module sd_iofull
          .ic_data                           (c_data),
          .p_drdy                            (i_drdy));
 
-      sd_input #(width) out
+      sd_input #(.width(width)) out
         (
          .c_drdy                            (i_drdy),
          .ip_srdy                           (p_srdy),
@@ -79,7 +79,7 @@ module sd_iofull
     end
   else
     begin : output_config
-      sd_input #(width) in
+      sd_input #(.width(width)) in
         (
          .c_drdy                            (c_drdy),
          .ip_srdy                           (i_srdy),
@@ -90,7 +90,7 @@ module sd_iofull
          .c_data                            (c_data),
          .ip_drdy                           (i_drdy));
       
-      sd_output #(width) out
+      sd_output #(.width(width)) out
         (
          .ic_drdy                           (i_drdy),
          .p_srdy                            (p_srdy),
