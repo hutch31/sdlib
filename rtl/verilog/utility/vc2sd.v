@@ -2,7 +2,17 @@
 // Valid/Credit to Srdy-Drdy Converter
 //
 // Converts a valid-credit interface to an srdy-drdy interface using
-// a small built-in FIFO.
+// an external FIFO.  This block is meant to be paired with an sd_fifo_c
+// but can be used with any FIFO which updates its usage one cycle
+// after p_srdy is asserted.
+//
+// p_drdy in this module is used only for error checking (overflow).
+//
+// This block uses a post-reset handshake protocol with its pair
+// module (sd2vc) so that it does not issue credits until both
+// modules have been released from reset.  The handshake pattern is
+// the wakeup_pattern parameter, followed by its inverse.  Until
+// the handshake pattern is seen all input is ignored.
 //
 // Halts timing on all c-side output signals.
 // Halts timing on all c-side input signals when reginp == 1
@@ -53,174 +63,103 @@
 module vc2sd
   #(parameter depth=16,
     parameter asz=$clog2(depth),
+    parameter usz=$clog2(depth+1),
     parameter width=8,
-    parameter reginp=0
+    parameter reginp=0,
+    parameter wakeup_pattern=1
     )
     (
-     input       clk,
-     input       reset,
-     input       c_vld,
-     output reg  c_cr,
-     input [width-1:0] c_data,
+     input 		clk,
+     input 		reset,
+     input 		c_vld,
+     output reg 	c_cr,
+     input [width-1:0] 	c_data,
 
-     output reg             p_srdy,
-     input                  p_drdy,
-     output reg [width-1:0] p_data
+     input [usz-1:0] 	p_usage,
+     output reg 	p_srdy,
+     input 		p_drdy,
+     output [width-1:0] p_data
      );
 
-  localparam npt = (depth != (2**asz));
+  localparam cr_sz = $clog2(depth+2);
+  reg [width-1:0] 	    r_data;
+  reg 			    r_vld;
+   reg [1:0] 		  state, nxt_state;
+  reg [usz-1:0] 		  cissued, nxt_cissued;
+  wire [cr_sz-1:0] 		  crtotal;
+  reg 			  nxt_c_cr;
+  wire 			  overflow;
+  
+  localparam s_init = 0, s_run = 1, s_wake0 = 2, s_wake1 = 3;
+  assign crtotal = p_usage + cissued + c_cr;
 
-  reg [asz:0]           wrptr, nxt_wrptr;
-  reg [asz:0]           wrptr_p1;
-  reg                   full;
-  reg [asz:0]           rdptr;
-  //wire [asz:0]          usage;
-  reg [asz:0]           usage, nxt_usage;
-  wire [asz:0]          crtotal;
-  reg [asz:0]           cissued, nxt_cissued;
-  wire                  in_vld;
-  reg [asz:0]           nxt_rdptr;
-  reg [asz:0]           rdptr_p1;
-  reg                   empty;
-  reg                   nxt_p_srdy;
-  //reg                   rd_en;
-  reg                   wr_en;
-  wire [width-1:0]      wr_data;
-  wire [asz-1:0]        rd_addr;
-  reg                   nxt_c_cr;
+  assign overflow = p_srdy & ~p_drdy;
 
-  reg [width-1:0]       buffer [0:depth-1];
-
-  //assign o_usage = (rdptr[asz] & !wrptr[asz]) ? depth + wrptr[asz-1:0] - rdptr[asz-1:0]  : wrptr - rdptr;
-
-  assign crtotal = usage + cissued + c_cr;
+  always @(posedge clk)
+    begin
+      r_data <= c_data;
+      r_vld  <= c_vld;
+    end
+  assign p_data = r_data;
   
   always @*
     begin
-      if (npt && (wrptr == (depth-1)))
-        wrptr_p1 = 0;
-      else
-        wrptr_p1 = wrptr + 1;
-
-      if (npt)
-        full = (usage == depth);
-      else
-        full = ((wrptr[asz-1:0] == rdptr[asz-1:0]) && 
-                (wrptr[asz] == ~rdptr[asz]));
-          
-      if (in_vld)
-        nxt_wrptr = wrptr_p1;
-      else
-        nxt_wrptr = wrptr;
-
-      wr_en = in_vld & !full;
-
-      if (c_cr & !in_vld)
-        nxt_cissued = cissued + 1;
-      else if (in_vld & !c_cr)
-        nxt_cissued = cissued - 1;
-      else
-        nxt_cissued = cissued;
-
-      nxt_c_cr = (crtotal < depth);
-
-      if (in_vld & ~(p_srdy & p_drdy))
-        nxt_usage = usage + 1;
-      else if ((p_srdy & p_drdy) & ~in_vld)
-        nxt_usage = usage - 1;
-      else
-        nxt_usage = usage;
-    end
+      p_srdy = 0;
+      nxt_c_cr = 0;
+      nxt_state = state;
+      nxt_cissued = cissued;
       
+      case (state)
+	s_init :
+	  begin
+	    if (r_vld && (r_data == wakeup_pattern))
+	      nxt_state = s_wake0;
+	  end
+
+	s_wake0 :
+	  begin
+	    if (r_vld && (r_data == ~wakeup_pattern))
+	      begin
+		nxt_cissued = 0;
+		nxt_state = s_run;
+	      end
+	    else
+	      nxt_state = s_init;
+	  end
+
+	s_run :
+	  begin
+	    p_srdy = r_vld;
+	    
+	    if (c_cr & !r_vld)
+              nxt_cissued = cissued + 1;
+	    else if (r_vld & !c_cr)
+              nxt_cissued = cissued - 1;
+	    else
+              nxt_cissued = cissued;
+	    
+	    nxt_c_cr = (crtotal < depth);
+	  end // case: s_run
+
+	default :
+	  nxt_state = s_init;
+      endcase
+    end
+  
   always @(`SDLIB_CLOCKING)
     begin
       if (reset)
         begin
-          wrptr   <= `SDLIB_DELAY 0;
           cissued <= `SDLIB_DELAY 0;
           c_cr    <= `SDLIB_DELAY 1'b0;
-          usage   <= `SDLIB_DELAY 0;
+	  state   <= `SDLIB_DELAY s_init;
         end
       else
         begin
-          wrptr   <= `SDLIB_DELAY nxt_wrptr;
           cissued <= `SDLIB_DELAY nxt_cissued;
-          c_cr    <= `SDLIB_DELAY (crtotal < depth);
-          usage   <= `SDLIB_DELAY nxt_usage;
+          c_cr    <= `SDLIB_DELAY nxt_c_cr;
+	  state   <= `SDLIB_DELAY nxt_state;
         end // else: !if(reset)
     end // always @ (posedge clk)
-
-  generate if (reginp == 1)
-    begin : reginp_yes
-      reg r_vld;
-      reg [width-1:0] r_data;
-      always @(posedge clk)
-        begin
-          if (reset)
-            r_vld <= 0;
-          else
-            r_vld <= c_vld;
-        end
-      always @(posedge clk)
-        begin
-          r_data <= c_data;
-        end
-      
-      assign in_vld = r_vld;
-      assign wr_data = r_data;
-    end // block: reginp_yes
-  else
-    begin : reginp_no
-      assign in_vld = c_vld;
-      assign wr_data = c_data;
-    end
-  endgenerate
-
-  always @*
-    begin
-      if (npt && (rdptr == (depth-1)))
-        rdptr_p1 = 0;
-      else
-        rdptr_p1 = rdptr + 1;
-      
-      empty = (wrptr == rdptr);
-
-      if (p_drdy & p_srdy)
-        nxt_rdptr = rdptr_p1;
-      else
-        nxt_rdptr = rdptr;
-          
-      nxt_p_srdy = (wrptr != nxt_rdptr);
-      //rd_en = (p_drdy & p_srdy) | (!empty & !p_srdy);
-    end
-      
-  always @(`SDLIB_CLOCKING)
-    begin
-      if (reset)
-        begin
-          rdptr <= `SDLIB_DELAY 0;
-          p_srdy  <= `SDLIB_DELAY 0;
-        end
-      else
-        begin
-          rdptr <= `SDLIB_DELAY nxt_rdptr;
-          p_srdy <= `SDLIB_DELAY nxt_p_srdy;
-        end // else: !if(reset)
-    end // always @ (posedge clk)
-
-  always @(posedge clk)
-    begin
-      if (wr_en)
-        buffer[wrptr[asz-1:0]] <= wr_data;      
-    end
-
-  assign rd_addr = rdptr[asz-1:0];
-//  assign p_data = buffer[rd_addr];
-
-  always @(posedge clk)
-    begin
-      p_data <= buffer[nxt_rdptr[asz-1:0]];
-    end
-
-endmodule
   
+endmodule // vc2sd
