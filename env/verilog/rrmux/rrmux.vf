@@ -1,0 +1,7 @@
+bench_rrmux.v
+sd_seq_check.v
+sd_seq_gen.v
++libext+.v
+-y ../../../rtl/verilog/forks
+
+
