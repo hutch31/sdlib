@@ -3,12 +3,13 @@
 `define SDLIB_DELAY
 
 `define TEST_STANDALONE
+`define TEST_VECS 1000
 
 module bench_fifo_s;
 
   reg clk, reset, reset1;
 
-  localparam width = 8;
+  localparam width = 16;
   localparam depth = 6;
   localparam asz   = $clog2(depth);
   localparam usz = $clog2(depth+1);
@@ -18,19 +19,19 @@ module bench_fifo_s;
 
   /*AUTOWIRE*/
   // Beginning of automatic wires (for undeclared instantiated-module outputs)
-  wire [width-1:0]	chk_data;		// From rxfifo of sd_fifo_c.v
-  wire			chk_drdy;		// From chk of sd_seq_check.v
-  wire			chk_srdy;		// From rxfifo of sd_fifo_c.v
-  wire [width-1:0]	gen_data;		// From gen of sd_seq_gen.v
-  wire			gen_drdy;		// From sd2vc of sd2vc.v
-  wire			gen_srdy;		// From gen of sd_seq_gen.v
-  wire [width-1:0]	vf_data;		// From i_vc2sd of vc2sd.v
-  wire			vf_drdy;		// From rxfifo of sd_fifo_c.v
-  wire			vf_srdy;		// From i_vc2sd of vc2sd.v
-  wire [usz-1:0]	vf_usage;		// From rxfifo of sd_fifo_c.v
-  wire			x_cr;			// From i_vc2sd of vc2sd.v
-  wire [width-1:0]	x_data;			// From sd2vc of sd2vc.v
-  wire			x_vld;			// From sd2vc of sd2vc.v
+  wire [width-1:0]      chk_data;               // From rxfifo of sd_fifo_c.v
+  wire                  chk_drdy;               // From chk of sd_seq_check.v
+  wire                  chk_srdy;               // From rxfifo of sd_fifo_c.v
+  wire [width-1:0]      gen_data;               // From gen of sd_seq_gen.v
+  wire                  gen_drdy;               // From sd2vc of sd2vc.v
+  wire                  gen_srdy;               // From gen of sd_seq_gen.v
+  wire [width-1:0]      vf_data;                // From i_vc2sd of vc2sd.v
+  wire                  vf_drdy;                // From rxfifo of sd_fifo_c.v
+  wire                  vf_srdy;                // From i_vc2sd of vc2sd.v
+  wire [usz-1:0]        vf_usage;               // From rxfifo of sd_fifo_c.v
+  wire                  x_cr;                   // From i_vc2sd of vc2sd.v
+  wire [width-1:0]      x_data;                 // From sd2vc of sd2vc.v
+  wire                  x_vld;                  // From sd2vc of sd2vc.v
   // End of automatics
 
 /* sd_seq_gen AUTO_TEMPLATE
@@ -41,12 +42,12 @@ module bench_fifo_s;
   sd_seq_gen #(.width(width))gen
     (/*AUTOINST*/
      // Outputs
-     .p_srdy				(gen_srdy),		 // Templated
-     .p_data				(gen_data[width-1:0]),	 // Templated
+     .p_srdy                            (gen_srdy),              // Templated
+     .p_data                            (gen_data[width-1:0]),   // Templated
      // Inputs
-     .clk				(clk),
-     .reset				(reset),
-     .p_drdy				(gen_drdy));		 // Templated
+     .clk                               (clk),
+     .reset                             (reset),
+     .p_drdy                            (gen_drdy));             // Templated
 
 /* sd_seq_check AUTO_TEMPLATE
  (
@@ -56,12 +57,12 @@ module bench_fifo_s;
   sd_seq_check #(.width(width)) chk
     (/*AUTOINST*/
      // Outputs
-     .c_drdy				(chk_drdy),		 // Templated
+     .c_drdy                            (chk_drdy),              // Templated
      // Inputs
-     .clk				(clk),
-     .reset				(reset),
-     .c_srdy				(chk_srdy),		 // Templated
-     .c_data				(chk_data[width-1:0]));	 // Templated
+     .clk                               (clk),
+     .reset                             (reset),
+     .c_srdy                            (chk_srdy),              // Templated
+     .c_data                            (chk_data[width-1:0]));  // Templated
 
 /* sd2vc AUTO_TEMPLATE
  (
@@ -73,19 +74,19 @@ module bench_fifo_s;
  );
  */
   sd2vc #(.width(width), .cc_sz(5), 
-	  .reginp(0), .wakeup_pattern (8'hF5)) 
+          .reginp(0), .wakeup_pattern (8'hF5)) 
   sd2vc
     (/*AUTOINST*/
      // Outputs
-     .c_drdy				(gen_drdy),		 // Templated
-     .p_vld				(x_vld),		 // Templated
-     .p_data				(x_data[width-1:0]),	 // Templated
+     .c_drdy                            (gen_drdy),              // Templated
+     .p_vld                             (x_vld),                 // Templated
+     .p_data                            (x_data[width-1:0]),     // Templated
      // Inputs
-     .clk				(clk),
-     .reset				(reset1),		 // Templated
-     .c_srdy				(gen_srdy),		 // Templated
-     .c_data				(gen_data[width-1:0]),	 // Templated
-     .p_cr				(x_cr));			 // Templated
+     .clk                               (clk),
+     .reset                             (reset1),                // Templated
+     .c_srdy                            (gen_srdy),              // Templated
+     .c_data                            (gen_data[width-1:0]),   // Templated
+     .p_cr                              (x_cr));                         // Templated
 
   /* vc2sd AUTO_TEMPLATE
    (
@@ -99,20 +100,20 @@ module bench_fifo_s;
           .reginp                       (0),
           .depth                        (depth),
           .width                        (width),
-	  .wakeup_pattern (8'hF5))
+          .wakeup_pattern (8'hF5))
   i_vc2sd
     (/*AUTOINST*/
      // Outputs
-     .c_cr				(x_cr),			 // Templated
-     .p_srdy				(vf_srdy),		 // Templated
-     .p_data				(vf_data[width-1:0]),	 // Templated
+     .c_cr                              (x_cr),                  // Templated
+     .p_srdy                            (vf_srdy),               // Templated
+     .p_data                            (vf_data[width-1:0]),    // Templated
      // Inputs
-     .clk				(clk),
-     .reset				(reset),
-     .c_vld				(x_vld),		 // Templated
-     .c_data				(x_data[width-1:0]),	 // Templated
-     .p_usage				(vf_usage[usz-1:0]),	 // Templated
-     .p_drdy				(vf_drdy));		 // Templated
+     .clk                               (clk),
+     .reset                             (reset),
+     .c_vld                             (x_vld),                 // Templated
+     .c_data                            (x_data[width-1:0]),     // Templated
+     .p_usage                           (vf_usage[usz-1:0]),     // Templated
+     .p_drdy                            (vf_drdy));              // Templated
 
   /* sd_fifo_c AUTO_TEMPLATE
    (
@@ -125,16 +126,16 @@ module bench_fifo_s;
   rxfifo
     (/*AUTOINST*/
      // Outputs
-     .c_drdy				(vf_drdy),		 // Templated
-     .usage				(vf_usage[usz-1:0]),	 // Templated
-     .p_srdy				(chk_srdy),		 // Templated
-     .p_data				(chk_data[width-1:0]),	 // Templated
+     .c_drdy                            (vf_drdy),               // Templated
+     .usage                             (vf_usage[usz-1:0]),     // Templated
+     .p_srdy                            (chk_srdy),              // Templated
+     .p_data                            (chk_data[width-1:0]),   // Templated
      // Inputs
-     .clk				(clk),
-     .reset				(reset),
-     .c_srdy				(vf_srdy),		 // Templated
-     .c_data				(vf_data[width-1:0]),	 // Templated
-     .p_drdy				(chk_drdy));		 // Templated
+     .clk                               (clk),
+     .reset                             (reset),
+     .c_srdy                            (vf_srdy),               // Templated
+     .c_data                            (vf_data[width-1:0]),    // Templated
+     .p_drdy                            (chk_drdy));             // Templated
   
   initial
     begin
@@ -149,7 +150,7 @@ module bench_fifo_s;
 
       repeat (64) @(posedge clk);
       
-      gen.rep_count = 1000;
+      gen.rep_count = `TEST_VECS;
 
       // burst normal data for 40 cycles
       repeat (40) @(posedge clk);
@@ -177,7 +178,16 @@ module bench_fifo_s;
       gen.srdy_pat = 8'h11;
       repeat (100) @(posedge clk);
 
-      #50000;
+      //#50000;
+      wait (gen.rep_count == 0);
+      #1000;
+      
+      if (chk.ok_cnt == `TEST_VECS)
+        $display ("----- TEST PASSED -----");
+      else
+        begin
+          $display ("***** TEST FAILED (received %d vectors) *****", chk.ok_cnt);
+        end
       $finish;
     end
 

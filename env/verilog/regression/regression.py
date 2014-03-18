@@ -2,7 +2,7 @@
 
 import os,subprocess
 
-modules = ["fifo_c","fifo_b","fifo_s","rrmux"]
+modules = ["fifo_c","fifo_b","fifo_s","rrmux","vcif"]
 
 def run_module (module):
     cwd = os.getcwd()
