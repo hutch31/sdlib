@@ -2,7 +2,6 @@
 
 import os,subprocess
 
-modules = ["fifo_c","fifo_b","fifo_s","rrmux","vcif"]
 
 def run_module (module):
     cwd = os.getcwd()
@@ -14,9 +13,15 @@ def run_module (module):
         return True
     else: return False
 
-results = {}
-for m in modules:
-    results[m] = run_module (m)
+def run_regression ():
+    results = {}
+    print ("%-10s %6s" % ("Test Name", "Result"))
+    for m in modules:
+        results[m] = run_module (m)
+        if results[m]: status = "PASS"
+        else: status = "FAIL"
+        print ("%-10s %6s" % ( m, status))
 
-print (repr(results))
+modules = ["fifo_c","fifo_b","fifo_s","rrmux","vcif","mux_demux"]
+run_regression()
 
