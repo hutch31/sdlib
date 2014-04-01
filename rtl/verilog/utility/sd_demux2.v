@@ -36,7 +36,8 @@
 //----------------------------------------------------------------------
 
 module sd_demux2
-  #(parameter width=8)
+  #(parameter width=8,
+    parameter adj_bits=1)
   (
    input clk,
    input reset,
@@ -50,67 +51,95 @@ module sd_demux2
    output logic [width-1:0] p_data
    );
 
-   typedef enum 	    { s_empty, s_full, s_half } state_e;
-   logic [width-1:0] 	    nxt_p_data;
+   typedef enum             { s_empty, s_full, s_half } state_e;
+   logic [width-1:0]        nxt_p_data;
 
    state_e state, nxt_state;
 
-   always @*
-     begin
-       nxt_state = state;
-       nxt_p_data = p_data;
-       p_srdy = 0;
-       c_drdy = 0;
+  logic [width-1:0]         first_cycle;
+  logic [width-1:0]         second_cycle;
+  generate
+    if (adj_bits) begin : MUX_ADJ_BITS
+      
+      always @* begin
+        first_cycle = p_data;
+        second_cycle = p_data;
+        for (int i = 0; i < width/2; i=i+1) begin
+          first_cycle[i*2+1] = c_data[i];
+          second_cycle[i*2]  = c_data[i];
+        end
+      end
+    end
 
-       case (state)
-	 s_empty :
-	   begin
-	     c_drdy = 1;
-	     if (c_srdy)
-	       begin
-		 nxt_p_data[width-1:width/2] = c_data;
-		 nxt_state = s_half;
-	       end
-	   end
+    else begin : MUX_MSB_LSB
 
-	 s_half :
-	   begin
-	     c_drdy = 1;
-	     if (c_srdy)
-	       begin
-		 nxt_p_data[width/2-1:0] = c_data;
-		 nxt_state = s_full;
-	       end
-	   end
+      always @* begin
+        first_cycle  = p_data;
+        second_cycle = p_data;
+        
+        first_cycle[width-1:width/2] = c_data;
+        second_cycle[width/2-1:0]    = c_data;
+      end
+    end
+    
+  endgenerate
+    
+  always @*
+    begin
+      nxt_state = state;
+      nxt_p_data = p_data;
+      p_srdy = 0;
+      c_drdy = 0;
+      
+      case (state)
+         s_empty :
+           begin
+             c_drdy = 1;
+             if (c_srdy)
+               begin
+                 nxt_p_data/*[width-1:width/2]*/ = first_cycle;//c_data;
+                 nxt_state = s_half;
+               end
+           end
 
-	 s_full :
-	   begin
-	     p_srdy = 1;
-	     c_drdy = p_drdy;
+         s_half :
+           begin
+             c_drdy = 1;
+             if (c_srdy)
+               begin
+                 nxt_p_data/*[width/2-1:0]*/ = second_cycle;//c_data;
+                 nxt_state = s_full;
+               end
+           end
 
-	     if (c_srdy & p_drdy)
-	       begin
-		 nxt_p_data[width-1:width/2] = c_data;
-		 nxt_state = s_half;
-	       end
-	     else if (p_drdy)
-	       nxt_state = s_empty;
-	   end // case: s_full
+         s_full :
+           begin
+             p_srdy = 1;
+             c_drdy = p_drdy;
 
-	 default : nxt_state = s_empty;
+             if (c_srdy & p_drdy)
+               begin
+                 nxt_p_data/*[width-1:width/2]*/ = first_cycle;//c_data;
+                 nxt_state = s_half;
+               end
+             else if (p_drdy)
+               nxt_state = s_empty;
+           end // case: s_full
+
+         default : nxt_state = s_empty;
        endcase // case (state)
      end // always @ *
 
    always @(posedge clk)
      begin
        if (reset)
-	 state <= s_empty;
+         state <= s_empty;
        else
-	 state <= nxt_state;
+         state <= nxt_state;
      end
 
    always @(posedge clk)
      p_data <= nxt_p_data;
-	       
+               
 
 endmodule // sd_demux2

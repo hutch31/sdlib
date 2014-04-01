@@ -60,7 +60,7 @@ module bench_mux_demux;
      .c_\(.*\)   (gen_\1[]),
  );
  */
-  sd_enmux2 #(.width(width), .adj_bits(0)) enmux
+  sd_enmux2 #(.width(width), .adj_bits(1)) enmux
     (/*AUTOINST*/
      // Outputs
      .c_drdy                            (gen_drdy),              // Templated
@@ -79,7 +79,7 @@ module bench_mux_demux;
      .c_\(.*\)   (int_\1[]),
  );
  */
-  sd_demux2 #(.width(width), .adj_bits(0)) demux
+  sd_demux2 #(.width(width), .adj_bits(1)) demux
     (/*AUTOINST*/
      // Outputs
      .c_drdy                            (int_drdy),              // Templated
