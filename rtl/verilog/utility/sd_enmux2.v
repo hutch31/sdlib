@@ -106,7 +106,7 @@ module sd_enmux2
 	       nxt_state = s_empty;
 	   end // case: s_lower
 
-	 default : state = s_empty;
+	 default : nxt_state = s_empty;
        endcase // case (state)
      end // always @ *
 
