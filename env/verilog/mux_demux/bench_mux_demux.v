@@ -4,7 +4,7 @@ module bench_mux_demux;
 
   reg clk, reset;
 
-  localparam width = 9;
+  localparam width = 10;
   localparam depth = 7;
   localparam usz = $clog2(depth+1);
 
@@ -29,7 +29,7 @@ module bench_mux_demux;
  .p_\(.*\)   (gen_\1[]),
  );
  */
-  sd_seq_gen gen
+  sd_seq_gen #(.width(width)) gen
     (/*AUTOINST*/
      // Outputs
      .p_srdy                            (gen_srdy),              // Templated
