@@ -1,8 +1,9 @@
 //----------------------------------------------------------------------
 // Srdy/Drdy 2:1 Data Multiplexer
 //
-// This block converts a single token into two half-size tokens.  The
-// tokens are sent MSB first.  It is designed to communicate with a
+// This block converts a single token into two half-size tokens.  The 
+// half-sized tokens are built either by muxing adjacent bits (adj_bits=1) 
+// or are sent MSB first.  It is designed to communicate with a
 // sd_demux2 module.
 //
 // This block does not halt timing on drdy, and assumes its input

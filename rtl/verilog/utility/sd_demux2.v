@@ -2,7 +2,8 @@
 // Srdy/Drdy 2:1 Data DeMultiplexer
 //
 // This block converts a two half-size tokens into a full-size tokens.  The
-// tokens are sent MSB first.  It is designed to communicate with a
+// tokens may be received either alternating the bits, or MSB first. 
+// It is designed to communicate with a
 // sd_enmux2 module.
 //
 // This block does not halt timing on drdy.
