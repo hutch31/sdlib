@@ -86,7 +86,7 @@ module sd_seq_check
           dpp = 0;
           first = 1;
           last_seq = 0;
-          ok_cnt = 1;
+          ok_cnt = 0;
         end
       else
         begin

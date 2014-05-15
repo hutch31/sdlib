@@ -1,0 +1,5 @@
+bench_mux_demux.v
++libext+.v
+-y ../common
+-y ../../../rtl/verilog/utility
+

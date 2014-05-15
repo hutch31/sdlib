@@ -1,5 +1,6 @@
 bench_vcif.v
 //vc2sd.v
++libext+.v
 -y ../common
 -y ../../../rtl/verilog/memory
 -y ../../../rtl/verilog/buffers

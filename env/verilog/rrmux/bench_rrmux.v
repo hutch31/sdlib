@@ -1,9 +1,13 @@
 module bench_rrmux;
 
+`define TEST_VECS 1000
+  
   reg clk, reset;
   
   localparam pat_dep = 8;
+  integer err_cnt;
 
+  initial err_cnt = 0;
   initial clk = 0;
   always clk = #5 ~clk;
 
@@ -24,7 +28,7 @@ module bench_rrmux;
 /* sd_seq_gen AUTO_TEMPLATE
  (
      .width (8),
-     .tag_val (@),
+     .tag_val (2'd@),
      .tag_sz  (2),
      .x_inval (1),
      .p_srdy                            (in_srdy[@]),
@@ -36,7 +40,7 @@ module bench_rrmux;
                // Parameters
                .width                   (8),                     // Templated
                .tag_sz                  (2),                     // Templated
-               .tag_val                 (0),                     // Templated
+               .tag_val                 (2'd0),                  // Templated
                .x_inval                 (1),                     // Templated
                .pat_dep                 (pat_dep))  gen0
     (/*AUTOINST*/
@@ -52,7 +56,7 @@ module bench_rrmux;
                // Parameters
                .width                   (8),                     // Templated
                .tag_sz                  (2),                     // Templated
-               .tag_val                 (1),                     // Templated
+               .tag_val                 (2'd1),                  // Templated
                .x_inval                 (1),                     // Templated
                .pat_dep                 (pat_dep))  gen1
     (/*AUTOINST*/
@@ -68,7 +72,7 @@ module bench_rrmux;
                // Parameters
                .width                   (8),                     // Templated
                .tag_sz                  (2),                     // Templated
-               .tag_val                 (2),                     // Templated
+               .tag_val                 (2'd2),                  // Templated
                .x_inval                 (1),                     // Templated
                .pat_dep                 (pat_dep))  gen2
     (/*AUTOINST*/
@@ -84,7 +88,7 @@ module bench_rrmux;
                // Parameters
                .width                   (8),                     // Templated
                .tag_sz                  (2),                     // Templated
-               .tag_val                 (3),                     // Templated
+               .tag_val                 (2'd3),                  // Templated
                .x_inval                 (1),                     // Templated
                .pat_dep                 (pat_dep))  gen3
     (/*AUTOINST*/
@@ -164,7 +168,7 @@ module bench_rrmux;
 /* sd_seq_check AUTO_TEMPLATE
  (
      .width (8),
-     .tag_val (@),
+     .tag_val (2'd@),
      .tag_sz  (2),
      .x_inval (1),
      .c_srdy                            (out_srdy[@]),
@@ -176,7 +180,7 @@ module bench_rrmux;
                  // Parameters
                  .width                 (8),                     // Templated
                  .tag_sz                (2),                     // Templated
-                 .tag_val               (0))                     // Templated
+                 .tag_val               (2'd0))                  // Templated
   check0
       (/*AUTOINST*/
        // Outputs
@@ -191,7 +195,7 @@ module bench_rrmux;
                  // Parameters
                  .width                 (8),                     // Templated
                  .tag_sz                (2),                     // Templated
-                 .tag_val               (1))                     // Templated
+                 .tag_val               (2'd1))                  // Templated
     check1
       (/*AUTOINST*/
        // Outputs
@@ -206,7 +210,7 @@ module bench_rrmux;
                  // Parameters
                  .width                 (8),                     // Templated
                  .tag_sz                (2),                     // Templated
-                 .tag_val               (2))                     // Templated
+                 .tag_val               (2'd2))                  // Templated
     check2
       (/*AUTOINST*/
        // Outputs
@@ -221,7 +225,7 @@ module bench_rrmux;
                  // Parameters
                  .width                 (8),                     // Templated
                  .tag_sz                (2),                     // Templated
-                 .tag_val               (3))                     // Templated
+                 .tag_val               (2'd3))                  // Templated
     check3
       (/*AUTOINST*/
        // Outputs
@@ -232,6 +236,9 @@ module bench_rrmux;
        .c_srdy                          (out_srdy[3]),           // Templated
        .c_data                          (out_data[7:0]));         // Templated
 
+  reg        failed;
+  integer    i;
+  
   initial
     begin
       $dumpfile ("bench_rrmux.vcd");
@@ -245,12 +252,21 @@ module bench_rrmux;
       gen2.srdy_pat = 8'h5A;
       gen3.srdy_pat = 8'hA5;
       fork
-        gen0.send (100);
-        gen1.send (100);
-        gen2.send (100);
-        gen3.send (100);
+        gen0.send (`TEST_VECS);
+        gen1.send (`TEST_VECS);
+        gen2.send (`TEST_VECS);
+        gen3.send (`TEST_VECS);
       join
-      #1000;
+      #100;
+      wait (gen0.rep_count == 0)
+      #100;
+
+      if (err_cnt == 0)
+        $display ("----- TEST PASSED -----");
+      else
+        begin
+          $display ("***** TEST FAILED *****");
+        end
       $finish;
     end
   
