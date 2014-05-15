@@ -66,7 +66,7 @@ module sdhf_output
 
   genvar                   hf;
 
-  generate for (hf=0; hf<ctlfan; hf++)
+  generate for (hf=0; hf<ctlfan; hf++) begin : LOOP
     if (hf == (ctlfan-1))
       begin : lastblock
         sd_output #(.width(width-block*(ctlfan-1))) lblock
@@ -96,7 +96,8 @@ module sdhf_output
            .p_srdy                     (p_hfsrdy[hf]),
            .p_data                     (p_data[block*(hf+1)-1:block*hf]),
            .p_drdy                     (p_hfdrdy[hf]));
-      end
+      end // block: fanblock
+  end // block: LOOP
   endgenerate
 
 endmodule // sdhf_output
