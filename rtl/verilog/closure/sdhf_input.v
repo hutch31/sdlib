@@ -66,7 +66,7 @@ module sdhf_input
 
   genvar                   hf;
 
-  generate for (hf=0; hf<ctlfan; hf++)
+  generate for (hf=0; hf<ctlfan; hf++) begin : LOOP
     if (hf == (ctlfan-1))
       begin : lastblock
         sd_input #(.width(width-block*(ctlfan-1))) lblock
@@ -96,7 +96,8 @@ module sdhf_input
            .ip_srdy                     (ip_hfsrdy[hf]),
            .ip_data                     (ip_data[block*(hf+1)-1:block*hf]),
            .ip_drdy                     (ip_hfdrdy[hf]));
-      end
+      end // block: fanblock
+  end // block: LOOP
   endgenerate
 
 endmodule // sd_input
