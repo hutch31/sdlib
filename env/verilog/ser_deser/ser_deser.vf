@@ -1,0 +1,6 @@
+bench_ser_deser.v
++libext+.v
+-y ../common
+-y ../../../rtl/verilog/ser_des
+-y ../../../rtl/verilog/buffers
+
