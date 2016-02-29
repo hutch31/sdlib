@@ -40,7 +40,7 @@ logic [usz-1:0]   nxt_complete_usage;
 logic buf_shift;
 logic buf_wr_en;
 logic [asz-1:0] buf_rd_ptr;
-logic [usz-1:0] usage_d;
+//logic [usz-1:0] usage_d;
 logic nxt_buf_shift;
 logic nxt_buf_wr_en;
 logic [asz-1:0] nxt_buf_rd_ptr;
@@ -93,7 +93,7 @@ always @(posedge clk) begin
         //usage_d     <= {usz{1'b0}};
     end else begin
         wr_vld_d <= wr_vld;
-        //rd_vld_d <= p_srdy && p_drdy;
+        rd_vld_d <= p_srdy && p_drdy;
         partial_usage   <= nxt_partial_usage;
         buf_shift   <= nxt_buf_shift;
         buf_wr_en   <= nxt_buf_wr_en;
@@ -102,13 +102,12 @@ always @(posedge clk) begin
     end
 end
 always @(*) begin
-    nxt_buf_shift = ((usage < depth) && wr_vld_d) || ((usage == depth) && rd_vld);
-    nxt_buf_wr_en = (usage < depth) || (p_srdy && p_drdy);
+    nxt_buf_shift = ((usage < depth) && wr_vld_d) || ((usage == depth-1) && rd_vld_d);
+    nxt_buf_wr_en = (usage < depth) ; //|| (p_srdy && p_drdy);
     nxt_buf_rd_ptr = ( nxt_buf_shift &&  (p_srdy && p_drdy)) ? buf_rd_ptr      :
                      ( nxt_buf_shift && ~(p_srdy && p_drdy)) ? buf_rd_ptr-1'b1 :
                      (~nxt_buf_shift &&  (p_srdy && p_drdy)) ? buf_rd_ptr+1'b1 : buf_rd_ptr;
 end
-
 
 `ifdef SD_INLINE_ASSERTION_ON
 logic [usz-1:0]   complete_usage;
