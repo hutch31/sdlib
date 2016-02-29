@@ -1,7 +1,8 @@
 //----------------------------------------------------------------------
 // Author: Frank Wang
 // 
-// variant of sd_fifo_c, always write to last location and then shift
+// Variant of sd_fifo_c, always write to last location and then shift
+// All timing path are internall, there is no input-write/read-output signal fan-out issue 
 //
 //----------------------------------------------------------------------
 `ifndef _SD_FIFO_TAILWR_V_
