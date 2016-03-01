@@ -14,7 +14,7 @@ module sd_fifo_tailwr #(
     parameter usz=$clog2(depth+1)
 ) (
     input   clk,
-    input   reset,
+    input   rst,
 
     input   logic [width-1:0] c_data,
     input   logic             c_srdy,
@@ -51,7 +51,7 @@ assign wr_vld = c_srdy && c_drdy;
   
 assign c_drdy = (usage < depth);
 //always @(posedge clk) begin
-//    if (reset)                          c_drdy <= 1'b0;
+//    if (rst)                          c_drdy <= 1'b0;
 //    else if(usage < depth)              c_drdy <= 1'b1;
 //    else if((usage == depth) && p_drdy) c_drdy <= 1'b1;
 //    else                                c_drdy <= 1'b0;
@@ -75,7 +75,7 @@ end
 always @(posedge clk) begin
     data_buf <= nxt_data_buf;
 //    if(rst_sz>0)
-//        if(reset) data_buf[depth-1][width-1 -: rst_sz] <= {rst_sz{1'b0}};
+//        if(rst) data_buf[depth-1][width-1 -: rst_sz] <= {rst_sz{1'b0}};
 end
 
 // control
@@ -85,7 +85,7 @@ assign nxt_partial_usage   = partial_usage + wr_vld_d - rd_vld;
 assign usage = wr_vld_d + partial_usage;
 assign nxt_usage = nxt_complete_usage;
 always @(posedge clk) begin
-    if(reset) begin
+    if(rst) begin
         wr_vld_d <= 1'b0;
         partial_usage    <= {usz{1'b0}};
         buf_shift   <= 1'b0;
@@ -113,7 +113,7 @@ end
 `ifdef SD_INLINE_ASSERTION_ON
 logic [usz-1:0]   complete_usage;
 always @(posedge clk) begin
-    if(reset) begin
+    if(rst) begin
         complete_usage   <= {usz{1'b0}};
     end else begin
         complete_usage   <= nxt_complete_usage;
@@ -127,9 +127,9 @@ assign fifo_full = (usage >= depth);
 assign chk_usage = (complete_usage == usage);
 
 COVER_FIFO_FULL: cover property 
-        (@(posedge clk) disable iff (reset) fifo_full);
+        (@(posedge clk) disable iff (rst) fifo_full);
 ERROR_FIFO_USAGE: assert property 
-        (@(posedge clk) disable iff (reset) (complete_usage == usage));
+        (@(posedge clk) disable iff (rst) (complete_usage == usage));
 `endif
 
 endmodule // sd_fifo_tailwr
