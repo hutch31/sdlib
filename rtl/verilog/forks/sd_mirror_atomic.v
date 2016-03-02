@@ -1,6 +1,6 @@
 // Copyright (c) 2012 XPliant, Inc -- All rights reserved
 //-----------------------------------------------------------------------------
-// sd_mirror_simple.v
+// sd_mirror_atomic.v
 // 
 // Description:
 //      - A simple mirror (100% throughput) for forwarding the same output from 
@@ -29,9 +29,9 @@
 //  
 //-----------------------------------------------------------------------------
 
-`ifndef SD_MIRROR_SIMPLE_V
-`define SD_MIRROR_SIMPLE_V
-module sd_mirror_simple 
+`ifndef SD_MIRROR_ATOMIC_V
+`define SD_MIRROR_ATOMIC_V
+module sd_mirror_atomic 
     #(  parameter mirror_cnt=2,
         parameter width=32,
         parameter c_closure=0,
@@ -263,4 +263,4 @@ module sd_mirror_simple
 //         );
     
 endmodule
-`endif // SD_MIRROR_SIMPLE_V
+`endif // SD_MIRROR_ATOMIC_V
