@@ -128,7 +128,7 @@ module sd_enmux2
                  nxt_state = s_upper;
                  nxt_p_data = first_cycle;//c_data[width-1:width/2];
                end
-             else
+             else if (p_drdy)
                nxt_state = s_empty;
            end // case: s_lower
 
