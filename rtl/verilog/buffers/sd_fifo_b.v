@@ -98,7 +98,7 @@ module sd_fifo_b
      .c_commit				(c_commit),
      .c_abort				(c_abort),
      .c_srdy				(c_srdy),
-     .bound_low				(0),
+     .bound_low				('0),
      .bound_high			(bound_high),
      .rdptr				(com_rdptr));
 
@@ -128,7 +128,7 @@ module sd_fifo_b
      .clk				(clk),
      .reset				(reset),
      .enable				(1'b1),
-     .bound_low				(0),
+     .bound_low				('0),
      .mem_we                            (mem_we),
      .bound_high			(bound_high),
      .wrptr				(com_wrptr),
