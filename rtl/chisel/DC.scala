@@ -27,8 +27,11 @@ class DCOutput[T <: Data](data: T) extends Module {
   io.p.valid := Reg(next = nxt_p_valid, init=Bool(false))
   io.c.ready := io.p.ready | !io.p.valid
   val load = io.c.valid & io.c.ready
-  val nxt_p_data = UInt(io.c.bits)
-  io.p.bits := Reg(next = nxt_p_data)
+  //val nxt_p_data = Mux(load, io.c.bits, io.p.bits)
+  io.p.bits := Reg(io.c.bits)
+  when (load) {
+    io.p.bits := io.c.bits
+  }
 }
 
 class DCMirror[T <: Data](data: T, mirror: Int) extends Module {
