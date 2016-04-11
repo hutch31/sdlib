@@ -27,11 +27,12 @@ class DCOutput[T <: Data](data: T) extends Module {
   io.p.valid := Reg(next = nxt_p_valid, init=Bool(false))
   io.c.ready := io.p.ready | !io.p.valid
   val load = io.c.valid & io.c.ready
-  //val nxt_p_data = Mux(load, io.c.bits, io.p.bits)
-  io.p.bits := Reg(io.c.bits)
+  //val nxt_p_data = UInt(io.c.bits)
+  val p_bits = Reg(io.c.bits)
   when (load) {
-    io.p.bits := io.c.bits
+    p_bits := io.c.bits
   }
+  io.p.bits := p_bits
 }
 
 class DCMirror[T <: Data](data: T, mirror: Int) extends Module {
@@ -63,11 +64,12 @@ class WrapInput(w: Int) extends Module {
     val c = new DecoupledIO(UInt(width=w)).flip
     val p = new DecoupledIO(UInt(width=w))
   }
-  val dci = Module(new DCInput(io.c.bits))
+  //val dci = Module(new DCInput(io.c.bits))
   val dco = Module(new DCOutput(io.c.bits))
-  io.c <> dci.io.c
-  dci.io.p <> dco.io.c
+  io.c <> dco.io.c
   dco.io.p <> io.p
+  //dci.io.p <> dco.io.c
+  //dco.io.p <> io.p
 }
 
 object mainObject {
