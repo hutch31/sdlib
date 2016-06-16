@@ -138,11 +138,11 @@ always @(`SDLIB_CLOCKING) begin
         p_srdy <= 1'b0;
     end
     S_0_1:  begin
-        c_drdy <= p_drdy;
+        c_drdy <= 1'b1;  //p_drdy;
         p_srdy <= 1'b1;
     end
     S_1_0:  begin
-        c_drdy <= p_drdy;
+        c_drdy <= 1'b1;  //p_drdy;
         p_srdy <= 1'b1;
     end
     S_2_1:  begin
