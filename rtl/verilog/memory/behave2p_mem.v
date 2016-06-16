@@ -59,7 +59,7 @@ module behave2p_mem
     begin
       if (wr_en)
         begin
-          array[wr_addr] <= `SDLIB_DELAY d_in;
+          array[wr_addr] <= `SDLIB_DELAY d_in;   // ri lint_check_waive VAR_INDEX_RANGE
         end
     end
 
@@ -79,6 +79,6 @@ module behave2p_mem
     end
   endgenerate
 
-  assign d_out = array[r_addr];
+  assign d_out = (r_addr < depth?)array[r_addr]:array[depth-1]; // to make linting happy
 
 endmodule

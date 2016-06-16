@@ -58,7 +58,7 @@ assign c_drdy = (usage < depth);
 //end
 // read from fifo
 assign p_srdy = (usage > 0);
-assign p_data = data_buf[buf_rd_ptr];
+assign p_data = (buf_rd_ptr < depth)? data_buf[buf_rd_ptr]:data_buf[depth-1];   // to pass linting
 
 // writing and shifting of FIFO
 always @(*) begin
