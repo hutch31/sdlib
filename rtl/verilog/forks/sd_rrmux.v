@@ -83,7 +83,7 @@ module sd_rrmux
 
   wire [width-1:0]     rr_mux_grid [0:inputs-1];
   reg 		       rr_locked;
-  reg nxt_rr_locked;
+  reg nxt_rr_locked;   // ri lint_check_waive NOT_DRIVEN
   genvar               i;
   integer              j;
 

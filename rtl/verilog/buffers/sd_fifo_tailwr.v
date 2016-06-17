@@ -58,7 +58,7 @@ assign c_drdy = (usage < depth);
 //end
 // read from fifo
 assign p_srdy = (usage > 0);
-assign p_data = data_buf[buf_rd_ptr];
+assign p_data = data_buf[buf_rd_ptr];   // ri lint_check_waive VAR_INDEX_RANGE
 
 // writing and shifting of FIFO
 always @(*) begin
@@ -132,7 +132,22 @@ ERROR_FIFO_USAGE: assert property
         (@(posedge clk) disable iff (reset) (complete_usage == usage));
 `endif
 
+`ifdef PTR_IN_RANGE_ASSERTION_ON
+logic [asz-1:0] rd_ptr_idx;
+always @(posedge clk) begin
+    if(reset) begin
+	rd_ptr_idx <= {asz{1'b0}};
+    end else begin        
+	rd_ptr_idx <= nxt_buf_rd_ptr;
+    end
+end
+
+ERROR_PTR_OUT_RANGE:assert property
+	(@(posedge clk) disable iff (reset) (rd_ptr_idx < depth));
+`endif 
+  
 endmodule // sd_fifo_tailwr
 // Local Variables:
 // End:
 `endif //  _SD_FIFO_TAILWR_V_
+
