@@ -79,6 +79,22 @@ module behave2p_mem
     end
   endgenerate
 
-  assign d_out = (r_addr < depth?)array[r_addr]:array[depth-1]; // to make linting happy
+  assign d_out = array[r_addr]; // ri lint_check_waive VAR_INDEX_RANGE
+
+`ifdef PTR_IN_RANGE_ASSERTION_ON
+logic [addr_sz-1:0] rd_idx, wr_idx;
+always @(posedge clk) begin
+    if(reset) begin
+	rd_idx <= {addr_sz{1'b0}};
+	wr_idx <= {addr_sz{1'b0}};
+    end else begin
+	rd_idx <= r_addr;
+	wr_idx <= wr_addr;
+    end
+end
+
+ERROR_ADDR_OUT_RANGE: assert property
+	(@(posedge clk) disable iff (reset) ((rd_idx<depth)&&(wr_idx<depth)) )
+`endif
 
 endmodule
