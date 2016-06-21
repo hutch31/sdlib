@@ -81,7 +81,7 @@ module behave2p_mem
 
   assign d_out = array[r_addr]; // ri lint_check_waive VAR_INDEX_RANGE
 
-`ifdef PTR_IN_RANGE_ASSERTION_ON
+`ifdef SD_INLINE_ASSERTION_ON
 logic [addr_sz-1:0] rd_idx, wr_idx;
 always @(posedge clk) begin
     if(reset) begin

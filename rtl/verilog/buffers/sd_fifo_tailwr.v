@@ -130,9 +130,7 @@ COVER_FIFO_FULL: cover property
         (@(posedge clk) disable iff (reset) fifo_full);
 ERROR_FIFO_USAGE: assert property 
         (@(posedge clk) disable iff (reset) (complete_usage == usage));
-`endif
 
-`ifdef PTR_IN_RANGE_ASSERTION_ON
 logic [asz-1:0] rd_ptr_idx;
 always @(posedge clk) begin
     if(reset) begin
