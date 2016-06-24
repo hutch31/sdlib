@@ -1,17 +1,33 @@
 module bench_rrmux;
 
 `define TEST_VECS 1000
-  
+`define SDLIB_DELAY #0  
   reg clk, reset;
+  reg rrmux_rearb;
+   reg [7:0] rearb_pat;
+ 
   
   localparam pat_dep = 8;
+  parameter sim_mode = 2;
   integer err_cnt;
-
+  integer i,j;
+   
   initial err_cnt = 0;
   initial clk = 0;
+  initial j = 0;
+  initial i = 0;
+  initial rrmux_rearb = 1'b1;
+  initial rearb_pat = 8'hf1;
+   
   always clk = #5 ~clk;
-
-  /*AUTOWIRE*/
+   always@(posedge clk)
+     begin
+	rrmux_rearb = rearb_pat[j];
+	j=j+1;
+	if(j>7) j= 0;
+     end
+   
+   /*AUTOWIRE*/
   // Beginning of automatic wires (for undeclared instantiated-module outputs)
   wire [31:0]           in_data;                // From gen0 of sd_seq_gen.v, ...
   wire [3:0]            in_drdy;                // From rrmux of sd_rrmux.v
@@ -117,7 +133,7 @@ module bench_rrmux;
              // Parameters
              .width                     (8),
              .inputs                    (4),
-             .mode                      (0),
+             .mode                      (sim_mode),
              .fast_arb                  (1)) rrmux
     (/*AUTOINST*/
      // Outputs
@@ -130,7 +146,7 @@ module bench_rrmux;
      .reset                             (reset),
      .c_data                            (in_data[(8*4)-1:0]),    // Templated
      .c_srdy                            (in_srdy[3:0]),          // Templated
-     .c_rearb                           (1'b1),                  // Templated
+     .c_rearb                           (rrmux_rearb),                  // Templated
      .p_drdy                            (mm_drdy));               // Templated
 
   wire [3:0] mm_dst_vld;
@@ -236,14 +252,19 @@ module bench_rrmux;
        .c_srdy                          (out_srdy[3]),           // Templated
        .c_data                          (out_data[7:0]));         // Templated
 
-  reg        failed;
+  reg        fail;
   integer    i;
   
   initial
     begin
-      $dumpfile ("bench_rrmux.vcd");
-      $dumpvars;
-      reset = 1;
+     `ifdef VCS
+	$vcdpluson;
+     `else
+	$dumpfile ("bench_rrmux.vcd");
+        $dumpvars;
+     `endif
+
+/*      reset = 1;
       #100;
       reset = 0;
       #100;
@@ -257,9 +278,9 @@ module bench_rrmux;
         gen2.send (`TEST_VECS);
         gen3.send (`TEST_VECS);
       join
-      #100;
-      wait (gen0.rep_count == 0)
-      #100;
+    //  #100;
+    //  wait (gen0.rep_count == 0)
+    //  #100;
 
       if (err_cnt == 0)
         $display ("----- TEST PASSED -----");
@@ -269,8 +290,67 @@ module bench_rrmux;
         end
       $finish;
     end
+  */
+       reset = 1;
+       gen0.rep_count = 0;
+       gen1.rep_count = 0;
+       gen2.rep_count = 0;
+       gen3.rep_count = 0;
+       fail = 0;
+       rrmux_rearb = 0;
+       
+       #100;
+       reset = 0;
+
+       do_reset();
+       test1();
+       if(fail)
+	 $display("!!!!! TEST 1 FAILED !!!!!!");
+       else
+	 $display("----- TEST 1 PASED -----");
   
-  
+       $finish;
+    end // initial begin
+
+   task do_reset;
+      begin
+	 gen0.rep_count = 0;
+	 gen1.rep_count = 0;
+	 gen2.rep_count = 0;
+	 gen3.rep_count = 0;
+	 reset = 1;
+	 repeat(5)@(posedge clk);
+	 reset = 0;
+	 repeat(10)@(posedge clk);
+      end
+   endtask //do_reset
+
+   task end_check;
+      begin
+	 if (err_cnt > 0)
+	   fail = 1;
+      end
+   endtask // end_check
+
+   task test1;   //test mode0
+      begin
+	 $display("Running test 1"); 
+	 gen0.srdy_pat = 8'h0F;
+	 gen1.srdy_pat = 8'hF0;
+	 gen2.srdy_pat = 8'h5A;
+	 gen3.srdy_pat = 8'hA5;
+	 fork
+            gen0.send (`TEST_VECS);
+            gen1.send (`TEST_VECS);
+            gen2.send (`TEST_VECS);
+            gen3.send (`TEST_VECS);
+	 join
+	 #100;
+	 end_check();
+      end
+   endtask  //end task 1
+
+ 
 endmodule // bench_rrmux
 // Local Variables:
 // verilog-library-directories:("."  "../../../rtl/verilog/forks")

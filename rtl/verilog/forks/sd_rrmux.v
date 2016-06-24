@@ -2,6 +2,39 @@
 // Srdy/drdy round-robin arbiter
 // but without the one cycle decision delay.
 //
+// This component supports multiple round-robin modes:
+//
+// Mode 0 : Each input gets a single cycle, regardless of data
+//          availability.  This mode functions like a TDM
+//          demultiplexer.  Output flow control will cause the
+//          component to stall, so that inputs do not miss their
+//          turn due to flow control.
+// Mode 0 fast arb : Each input gets a single grant. If the
+//          output is not ready (p_drdy deasserted), then the
+//          machine will hold on that particular input until it
+//          receives a grant.  Once a single token has been
+//          accepted the machine will round-robin arbitrate.
+//          When there are no requests the machine returns to
+//          its default state.
+// Mode 1 : Each input can transmit for as long as it has data.
+//          When input deasserts, device will begin to hunt for a
+//          new input with data.
+// Mode 2 : Continue to accept input until the incoming data
+//          matches a particular "end pattern".  The end pattern
+//          is provided on the c_rearb (re-arbitrate) input.  When
+//          c_rearb is high, will hunt for new inputs on next clock.
+//
+// This component also supports two arbitration modes: slow and fast.
+// slow rotates the grant from requestor to requestor cycle by cycle,
+// so each requestor gets serviced at most once every #inputs cycles.
+// This can be useful for producing a TDM-type interface, however
+// requestors may be delayed waiting for the grant to come around even
+// if there are no other requestors.
+//
+// Fast mode immediately grants the highest-priority requestor, however
+// it is drdy-noncompliant (drdy will not be asserted until srdy is
+// asserted).
+//
 // Naming convention: c = consumer, p = producer, i = internal interface
 //----------------------------------------------------------------------
 //  Author: Frank Wang

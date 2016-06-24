@@ -20,7 +20,9 @@ module sd_seq_gen
   #(parameter width=8,
     parameter tag_sz=1,
     parameter tag_val=0,
-    parameter x_inval=0)
+    parameter x_inval=0,
+    parameter pat_dep = 8)
+  
   (input clk,
    input reset,
    output reg     p_srdy,
@@ -30,7 +32,7 @@ module sd_seq_gen
   reg 			  nxt_p_srdy;
   reg [width-1:0] 	  nxt_p_data;
 
-  parameter pat_dep = 8;
+  //parameter pat_dep = 8;
   localparam count_sz = width-tag_sz;
 
   reg [pat_dep-1:0] 	  srdy_pat;

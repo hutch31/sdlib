@@ -148,18 +148,18 @@ module bench_fifo_b;
         begin : traffic_gen
           gen.send (depth * 2);
 
-          repeat (5) @(posedge clk);
+        /*  repeat (5) @(posedge clk);
           gen.srdy_pat = 8'h5A;
-          gen.send (depth * 2);
+          gen.send (depth * 2);*/
      
           repeat (5) @(posedge clk);
           chk.drdy_pat = 8'hA5;
           gen.send (depth * 2);
       
           // check FIFO overflow
-          repeat (5) @(posedge clk);
-          gen.srdy_pat = 8'hFD;
-          gen.send (depth * 4);
+        //  repeat (5) @(posedge clk);
+        //  gen.srdy_pat = 8'hFD;
+        //  gen.send (depth * 4);
 
           // check FIFO underflow
           repeat (5) @(posedge clk);
