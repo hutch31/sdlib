@@ -90,7 +90,7 @@ always @(*) begin
         if((~push_vld) && (p_drdy))         nxt_state = S_1_0;
     end
     default: begin
-        nxt_state = state;
+        nxt_state = state;  //ri lint_check_waive UNREACHABLE
     end
     endcase
 end
@@ -150,8 +150,8 @@ always @(`SDLIB_CLOCKING) begin
         p_srdy <= 1'b1;
     end
     default: begin
-        c_drdy <= 1'b0;
-        p_srdy <= 1'b0;
+        c_drdy <= 1'b0;  //ri lint_check_waive UNREACHABLE
+        p_srdy <= 1'b0;	 //ri lint_check_waive UNREACHABLE
     end
     endcase
 end
