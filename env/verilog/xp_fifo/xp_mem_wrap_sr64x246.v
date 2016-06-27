@@ -1,0 +1,1 @@
+../../../../xp70/rtl/common/memory/xp_mem_wrap_sr64x246.v

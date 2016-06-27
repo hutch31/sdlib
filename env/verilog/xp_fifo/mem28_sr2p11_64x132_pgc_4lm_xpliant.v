@@ -1,0 +1,1 @@
+../../../../xp70/rtl/common/memory/mem28_sr2p11_64x132_pgc_4lm_xpliant.v

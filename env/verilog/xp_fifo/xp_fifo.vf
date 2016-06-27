@@ -1,0 +1,12 @@
+bench_fifo_xp.v
+.xp_fifo_sr64x246_s.v
+.xp_mem_wrap_sr64x246.v
+.xp_eccgen123.v
+.xp_eccchk123.v
+.mem28_sr2p11_64x132_pgc_4lm_xpliant.v
+../common/sd_seq_check.v
+../common/sd_seq_gen.v
+../../../rtl/verilog/buffers/sd_fifo_tailwr.v
+
+
+

@@ -103,7 +103,7 @@ always @(posedge clk) begin
     end
 end
 always @(*) begin
-    nxt_buf_shift = ((usage < depth) && wr_vld_d) || ((usage == depth-1) && rd_vld_d);
+    nxt_buf_shift = ((usage < depth) && wr_vld_d) || ((usage == depth-1) && rd_vld_d);  // ri lint_check_waive COMP_OP_BITLEN
     nxt_buf_wr_en = (usage < depth) ; //|| (p_srdy && p_drdy);
     nxt_buf_rd_ptr = ( nxt_buf_shift &&  (p_srdy && p_drdy)) ? buf_rd_ptr      :
                      ( nxt_buf_shift && ~(p_srdy && p_drdy)) ? buf_rd_ptr-1'b1 :
