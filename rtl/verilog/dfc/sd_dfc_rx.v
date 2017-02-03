@@ -42,17 +42,17 @@ module sd_dfc_rx #(
     input              clk,
     input              rst,
     input              c_vld,
-    output reg         c_fc_n,
+    output logic       c_fc_n,
     input [width-1:0]  c_data,
 
     input              force_stop,
 
-    output             p_srdy,
-    input              p_drdy,
-    output [width-1:0] p_data,
+    output logic             p_srdy,
+    input                    p_drdy,
+    output logic [width-1:0] p_data,
 
-    output             overflow,
-    output [usage_sz-1:0]   usage
+    output logic                 overflow,
+    output logic [usage_sz-1:0]  usage
     /*AUTOINPUT*/
     /*AUTOOUTPUT*/
 );
