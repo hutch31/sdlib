@@ -10,6 +10,7 @@ module bench_dfc;
   parameter valid_delay = 6;
   parameter fc_delay = 8;
   parameter threshold = 3;
+  parameter test_dfc_tx_n_sender = 1;
   localparam depth = (valid_delay+fc_delay+threshold);
 
   initial clk = 0;
@@ -17,13 +18,14 @@ module bench_dfc;
 
   /*AUTOWIRE*/
   // Beginning of automatic wires (for undeclared instantiated-module outputs)
-  wire [width-1:0]      chk_data;               // From dfca of dfc_receiver.v
+  logic [width-1:0]     chk_data;               // From receiver of sd_dfc_rx.v, ...
   wire                  chk_drdy;               // From chk of sd_seq_check.v
-  wire                  chk_srdy;               // From dfca of dfc_receiver.v
+  logic                 chk_srdy;               // From receiver of sd_dfc_rx.v, ...
   wire [width-1:0]      gen_data;               // From gen of sd_seq_gen.v
-  wire                  gen_drdy;               // From driver of dfc_sender.v
+  logic                 gen_drdy;               // From driver of sd_dfc_rctx.v, ...
   wire                  gen_srdy;               // From gen of sd_seq_gen.v
-  wire                  overflow;               // From dfca of dfc_receiver.v
+  logic                 overflow;               // From receiver of sd_dfc_rx.v, ...
+  logic [9:0]           usage;                  // From receiver of sd_dfc_rx.v
   // End of automatics
 
   logic [valid_delay-1:0][width-1:0] s_data;
@@ -47,7 +49,7 @@ module bench_dfc;
      // Inputs
      .clk                               (clk),
      .reset                             (reset),
-     .p_drdy                            (gen_drdy));              // Templated
+     .p_drdy                            (gen_drdy));             // Templated
 
 /* dfc_sender AUTO_TEMPLATE
  (
@@ -55,6 +57,42 @@ module bench_dfc;
  .p_\(.*\)    (s_\1[0]),
  );
  */
+/* sd_dfc_rctx AUTO_TEMPLATE
+ (
+ .c_\(.*\)   (gen_\1[]),
+ .p_\(.*\)    (s_\1[0]),
+ .rst         (reset),
+ );
+ */
+ localparam rc_ctr_sz = 8;
+ generate if(test_dfc_tx_n_sender > 0) begin: inst_dfc_tx
+  logic [rc_ctr_sz-1:0] window_size;
+  logic [rc_ctr_sz-1:0] rc_max_tx;
+  logic [rc_ctr_sz-1:0] mon_fc_thd;
+  logic                 mon_triggered;
+  initial begin
+    window_size = $urandom_range(0,255);
+    rc_max_tx   = $urandom_range(0,window_size);
+    mon_fc_thd  = $urandom_range(0,window_size);
+  end
+  sd_dfc_rctx #(
+    .width (width)
+  ) driver (/*AUTOINST*/
+            // Outputs
+            .mon_triggered              (mon_triggered),
+            .c_drdy                     (gen_drdy),              // Templated
+            .p_data                     (s_data[0]),             // Templated
+            .p_vld                      (s_vld[0]),              // Templated
+            // Inputs
+            .window_size                (window_size[rc_ctr_sz-1:0]),
+            .rc_max_tx                  (rc_max_tx[rc_ctr_sz-1:0]),
+            .mon_fc_thd                 (mon_fc_thd[rc_ctr_sz-1:0]),
+            .c_data                     (gen_data[width-1:0]),   // Templated
+            .c_srdy                     (gen_srdy),              // Templated
+            .p_fc_n                     (s_fc_n[0]),             // Templated
+            .clk                        (clk),
+            .rst                        (reset));                // Templated
+ end else begin: inst_dfc_sender
   dfc_sender #(.width (width)) driver
     (/*AUTOINST*/
      // Outputs
@@ -66,10 +104,11 @@ module bench_dfc;
      .reset                             (reset),
      .c_srdy                            (gen_srdy),              // Templated
      .c_data                            (gen_data[width-1:0]),   // Templated
-     .p_fc_n                            (s_fc_n[0]));             // Templated
+     .p_fc_n                            (s_fc_n[0]));            // Templated
+ end endgenerate
 
   genvar                vd, fd;
-  
+
   generate for (vd=1; vd<valid_delay; vd++)
     begin : valid_loop
       always @(posedge clk)
@@ -88,7 +127,7 @@ module bench_dfc;
         end
     end
   endgenerate
-  
+
 /* dfc_receiver AUTO_TEMPLATE
  (
  .c_fc_n      (s_fc_n[fc_delay-1]),
@@ -96,6 +135,35 @@ module bench_dfc;
  .p_\(.*\)    (chk_\1[]),
  );
  */
+/* sd_dfc_rx AUTO_TEMPLATE
+ (
+ .c_fc_n      (s_fc_n[fc_delay-1]),
+ .c_\(.*\)    (s_\1[valid_delay-1]),
+ .p_\(.*\)    (chk_\1[]),
+ .rst         (reset),
+ .force_stop    (1'b0),
+ );
+ */
+generate if(test_dfc_tx_n_sender > 0) begin: inst_dfc_rx
+  sd_dfc_rx #(
+    .width (width),
+    .rt_lat (valid_delay+fc_delay),
+    .usage_sz (10)
+  ) receiver (/*AUTOINST*/
+              // Outputs
+              .c_fc_n                   (s_fc_n[fc_delay-1]),    // Templated
+              .p_srdy                   (chk_srdy),              // Templated
+              .p_data                   (chk_data[width-1:0]),   // Templated
+              .overflow                 (overflow),
+              .usage                    (usage[9:0]),
+              // Inputs
+              .clk                      (clk),
+              .rst                      (reset),                 // Templated
+              .c_vld                    (s_vld[valid_delay-1]),  // Templated
+              .c_data                   (s_data[valid_delay-1]), // Templated
+              .force_stop               (1'b0),                  // Templated
+              .p_drdy                   (chk_drdy));             // Templated
+ end else begin: inst_dfc_receiver
   dfc_receiver #(.width(width), .depth(depth), .threshold(threshold)) dfca
     (/*AUTOINST*/
      // Outputs
@@ -108,8 +176,10 @@ module bench_dfc;
      .reset                             (reset),
      .c_vld                             (s_vld[valid_delay-1]),  // Templated
      .c_data                            (s_data[valid_delay-1]), // Templated
-     .p_drdy                            (chk_drdy));              // Templated
-  
+     .p_drdy                            (chk_drdy));             // Templated
+ end
+endgenerate
+
 
 /* sd_seq_check AUTO_TEMPLATE
  (
@@ -124,9 +194,9 @@ module bench_dfc;
      .clk                               (clk),
      .reset                             (reset),
      .c_srdy                            (chk_srdy),              // Templated
-     .c_data                            (chk_data[width-1:0]));   // Templated
+     .c_data                            (chk_data[width-1:0]));  // Templated
 
- 
+
 
   initial
     begin
@@ -147,8 +217,8 @@ module bench_dfc;
       gen.srdy_pat = 32'hFFFFFFFF;
       chk.drdy_pat = 32'hFFFFFFFF;
       #200;
-      
-      repeat (100) 
+
+      repeat (100)
         begin
           @(posedge clk);
           if ((gen_srdy && (gen_drdy !== 1'b1)) && !failed)
@@ -209,5 +279,5 @@ module bench_dfc;
 
 endmodule // bench_fifo_s
 // Local Variables:
-// verilog-library-directories:("." "../common" "../../../rtl/verilog/closure" "../../../rtl/verilog/buffers")
+// verilog-library-directories:("." "../common" "../../../rtl/verilog/closure" "../../../rtl/verilog/buffers" "../../../rtl/verilog/dfc")
 // End:

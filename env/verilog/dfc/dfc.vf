@@ -2,6 +2,7 @@ bench_dfc.v
 +libext+.v
 -y ../common
 -y ../../../rtl/verilog/closure
+-y ../../../rtl/verilog/dfc
 -y ../../../rtl/verilog/buffers
 -y ../../../rtl/verilog/memory
 
