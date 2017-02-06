@@ -72,7 +72,7 @@ module bench_dfc;
   logic                 mon_triggered;
   initial begin
     window_size = $urandom_range(0,255);
-    rc_max_tx   = $urandom_range(0,window_size);
+    rc_max_tx   = window_size; //$urandom_range(0,window_size);
     mon_fc_thd  = $urandom_range(0,window_size);
   end
   sd_dfc_rctx #(
@@ -203,12 +203,13 @@ endgenerate
 `ifdef MODEL_TECH
       $wlfdumpvars(0, bench_dfc);
 `else
-      $dumpfile("dfc.vcd");
-      $dumpvars;
+      $vcdpluson;
+      //$dumpfile("dfc.vcd");
+      //$dumpvars;
 `endif
       reset = 1;
       failed = 0;
-      #100;
+      #1000;
       reset = 0;
 
       gen.rep_count = 1000;
