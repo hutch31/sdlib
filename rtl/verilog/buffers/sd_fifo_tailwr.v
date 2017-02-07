@@ -2,7 +2,11 @@
 // Author: Frank Wang
 // 
 // Variant of sd_fifo_c, always write to last location and then shift
-// All timing path are internall, there is no input-write/read-output signal fan-out issue 
+// This module is intended to be used at the primary input port in registered in/out design flow.
+//
+// All timing path are internall, there is no input-write/read-output signal fan-out issue.
+// Input c_data are registered without fan-out, c_srdy goes through one combo gate before being registered.
+// Output c_drdy goes through a narrow comparator before driving out.
 //
 //----------------------------------------------------------------------
 `ifndef _SD_FIFO_TAILWR_V_
