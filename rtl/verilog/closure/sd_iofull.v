@@ -11,6 +11,7 @@
 //----------------------------------------------------------------------
 
 `ifndef _SD_IOFULL_V_
+    `define _SD_IOFULL_V_
 // Clocking statement for synchronous blocks.  Default is for
 // posedge clocking and positive async reset
 `ifndef SDLIB_CLOCKING 
