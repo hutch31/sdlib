@@ -1,7 +1,7 @@
 //----------------------------------------------------------------------
 // Author: Frank Wang
 //
-// This module is functionally equivalent to iofull
+// This module is functionally equivalent to sd_iofull_legacy
 // But this verison does not use srdy/drdy signals for clock gating directly
 //     intead, srdy/drdy fan-out to a few internal state signals, which then 
 //     dictate loading and poping of an internal 2-entry buffer.
@@ -10,6 +10,8 @@
 //
 //----------------------------------------------------------------------
 
+`ifndef _SD_IOFULL_V_
+    `define _SD_IOFULL_V_
 // Clocking statement for synchronous blocks.  Default is for
 // posedge clocking and positive async reset
 `ifndef SDLIB_CLOCKING 
@@ -21,7 +23,7 @@
  `define SDLIB_DELAY #1 
 `endif
 
-module sd_iofull_nofanout #(
+module sd_iofull #(
     //parameter ctrl_rep=1, // number of groups to divide the main data bus to reduce fan-out
     parameter ctrl_fanout=64,
     parameter width = 8
@@ -197,3 +199,4 @@ always @(*) begin
                                                              hold_0[(ctrl_rep-1)*lfo +: hfo] ;
 end
 endmodule
+`endif
