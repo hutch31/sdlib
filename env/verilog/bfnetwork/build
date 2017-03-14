@@ -1,0 +1,7 @@
+#!/bin/bash
+
+python ../../../rtl/verilog/crossbars/bfnetwork.py -p 8 -m sd_bf8 -f sd_bf8.v
+emacs --batch -l ~/Library/emacs/verilog-mode.el bench_bf.v -f verilog-auto -f save-buffer
+iverilog -f flist.f
+./a.out
+
