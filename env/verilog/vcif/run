@@ -1,5 +1,0 @@
-#!/bin/bash
-
-iverilog -f vcif.vf -o vcif
-./vcif
-
