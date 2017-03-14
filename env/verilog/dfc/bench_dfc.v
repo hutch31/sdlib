@@ -12,6 +12,7 @@ module bench_dfc;
   parameter threshold = 3;
   parameter test_dfc_tx_n_sender = 1;
   localparam depth = (valid_delay+fc_delay+threshold);
+  integer i;
 
   initial clk = 0;
   always #10 clk = ~clk;
@@ -65,7 +66,6 @@ module bench_dfc;
  );
  */
  localparam rc_ctr_sz = 8;
- generate if(test_dfc_tx_n_sender > 0) begin: inst_dfc_tx
   logic [rc_ctr_sz-1:0] window_size;
   logic [rc_ctr_sz-1:0] rc_max_tx;
   logic [rc_ctr_sz-1:0] mon_fc_thd;
@@ -92,33 +92,23 @@ module bench_dfc;
             .p_fc_n                     (s_fc_n[0]),             // Templated
             .clk                        (clk),
             .rst                        (reset));                // Templated
- end else begin: inst_dfc_sender
-  dfc_sender #(.width (width)) driver
-    (/*AUTOINST*/
-     // Outputs
-     .c_drdy                            (gen_drdy),              // Templated
-     .p_vld                             (s_vld[0]),              // Templated
-     .p_data                            (s_data[0]),             // Templated
-     // Inputs
-     .clk                               (clk),
-     .reset                             (reset),
-     .c_srdy                            (gen_srdy),              // Templated
-     .c_data                            (gen_data[width-1:0]),   // Templated
-     .p_fc_n                            (s_fc_n[0]));            // Templated
- end endgenerate
 
-  genvar                vd, fd;
-
-  generate for (vd=1; vd<valid_delay; vd++)
-    begin : valid_loop
-      always @(posedge clk)
+//  generate for (vd=1; vd<valid_delay; vd++)
+//    begin : valid_loop
+  always @(posedge clk)
+    begin
+      for (i=1; i<valid_delay; i=i+1)
         begin
-          s_vld[vd] <= s_vld[vd-1];
-          s_data[vd] <= s_data[vd-1];
+          s_vld[i] <= s_vld[i-1];
+          s_data[i] <= s_data[i-1];
         end
+      for (i=0; i<(fc_delay-1); i=i+1)
+        s_fc_n[i] <= s_fc_n[i+1];
     end
-  endgenerate
+//    end
+  //endgenerate
 
+/*
   generate for (fd=0; fd<(fc_delay-1); fd++)
     begin : flow_lop
       always @(posedge clk)
@@ -127,6 +117,7 @@ module bench_dfc;
         end
     end
   endgenerate
+  */
 
 /* dfc_receiver AUTO_TEMPLATE
  (
@@ -144,7 +135,6 @@ module bench_dfc;
  .force_stop    (1'b0),
  );
  */
-generate if(test_dfc_tx_n_sender > 0) begin: inst_dfc_rx
   sd_dfc_rx #(
     .width (width),
     .rt_lat (valid_delay+fc_delay),
@@ -163,23 +153,6 @@ generate if(test_dfc_tx_n_sender > 0) begin: inst_dfc_rx
               .c_data                   (s_data[valid_delay-1]), // Templated
               .force_stop               (1'b0),                  // Templated
               .p_drdy                   (chk_drdy));             // Templated
- end else begin: inst_dfc_receiver
-  dfc_receiver #(.width(width), .depth(depth), .threshold(threshold)) dfca
-    (/*AUTOINST*/
-     // Outputs
-     .c_fc_n                            (s_fc_n[fc_delay-1]),    // Templated
-     .p_srdy                            (chk_srdy),              // Templated
-     .p_data                            (chk_data[width-1:0]),   // Templated
-     .overflow                          (overflow),
-     // Inputs
-     .clk                               (clk),
-     .reset                             (reset),
-     .c_vld                             (s_vld[valid_delay-1]),  // Templated
-     .c_data                            (s_data[valid_delay-1]), // Templated
-     .p_drdy                            (chk_drdy));             // Templated
- end
-endgenerate
-
 
 /* sd_seq_check AUTO_TEMPLATE
  (
