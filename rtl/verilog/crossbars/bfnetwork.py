@@ -1,22 +1,65 @@
 #!/usr/bin/env python
 
+# ----------------------------------------------------------------------
+# Butterfly network generator script
+#
+# Creates a butterfly network of P ports using the sd_bfnode module.
+# P must be a power of 2 for both inputs and outputs.
+#
+# By default creates a network from "narrow" to "wide", so the left
+# side of the network has local connetivity and the right side has
+# global connectivity.  The reverse option creates a network with
+# wide to narrow instead.
+# ----------------------------------------------------------------------
+# Author: Guy Hutchison
+#
+# This is free and unencumbered software released into the public domain.
+#
+# Anyone is free to copy, modify, publish, use, compile, sell, or
+# distribute this software, either in source code form or as a compiled
+# binary, for any purpose, commercial or non-commercial, and by any
+# means.
+#
+# In jurisdictions that recognize copyright laws, the author or authors
+# of this software dedicate any and all copyright interest in the
+# software to the public domain. We make this dedication for the benefit
+# of the public at large and to the detriment of our heirs and
+# successors. We intend this dedication to be an overt act of
+# relinquishment in perpetuity of all present and future rights to this
+# software under copyright law.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+# For more information, please refer to <http://unlicense.org/>
+# ----------------------------------------------------------------------
+
 import math
 import argparse
 
-# t is a tuple of (m, n) where m is module number in a column and n is the column number
-def nodeIndex (t):
-    '''Generates the connectivity from each node to the nodes in the next column'''
-    (m,n) = t
-    if (m & (1<<n)):
-        x = (m - (1<<n))
+
+def nodeIndex(t):
+    '''Generates the connectivity from each node to the nodes in the next column
+    t is a tuple of (m, n) where m is module number in a column and n is the column number
+    '''
+    (m, n) = t
+    if (m & (1 << n)):
+        x = (m - (1 << n))
         y = m
     else:
         x = m
-        y = m+(1<<n)
-    return (x,y)
+        y = m+(1 << n)
+    return (x, y)
 
 
 def generateButterfly(ports, modname="bfnetwork", reverse=False):
+    '''Creates a butterfly network for sd_bfnode, returns resulting Verilog
+    code as a string.'''
     output = ''
 
     npc = ports // 2
@@ -75,6 +118,7 @@ def generateButterfly(ports, modname="bfnetwork", reverse=False):
 
     output += "endmodule\n"
     return output
+
 
 def main():
     parser = argparse.ArgumentParser(description='Create Verilog butterfly network')
