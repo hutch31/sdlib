@@ -1,0 +1,22 @@
+//// COMMENT: ////.*
+//// VAR_ASSIGN: `let VAR_NAME=
+
+// Verilog comment
+
+
+`let mid_name_in="_cfg_i_"
+`let mid_name_out="_cfg_o_"
+`let blk_names=["bm","pm0", "pm1", "rxdma"]
+`for sig_name in ["vld","fc_n","sf", "val","ef"]
+    `for(idx=0;idx<3;idx++)
+        `let blk_to = blk_names[idx+1]
+        `let blk_from = blk_names[idx]
+        assign `blk_to::_cfg_i_`sig_name:: = `blk_from::_cfg_o_`sig_name:: / 18;
+        //`let idx ++
+    `else
+        assign daisy_chain_o_`sig_name:: = `blk_from::_cfg_i_`sig_name:: * 1.6;
+        assign signal_A = signal_B * 1e8;
+    `endfor
+`endfor
+
+assign signal_C = signal_B;
