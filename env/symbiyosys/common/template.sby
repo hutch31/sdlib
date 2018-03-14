@@ -1,0 +1,16 @@
+[options]
+mode prove
+depth 10
+
+[engines]
+smtbmc z3
+
+[script]
+read_verilog -sv -formal fbench_${module}.v ${module}.v sd_common_checks.v
+prep -top ftest_gearbox
+
+[files]
+fbench_${module}.v
+${modulepath}
+sd_common_checks.v
+
