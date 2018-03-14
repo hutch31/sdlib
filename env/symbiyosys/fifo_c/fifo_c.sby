@@ -1,0 +1,17 @@
+[options]
+mode prove
+depth 10
+
+[engines]
+smtbmc z3
+
+[script]
+read_verilog -sv -formal fbench_fifo_c.v sd_fifo_c.v behave2p_mem.v sd_common_checks.v
+prep -top ftest_gearbox
+
+[files]
+fbench_fifo_c.v
+../../../rtl/verilog/buffers/sd_fifo_c.v
+../../../rtl/verilog/memory/behave2p_mem.v
+../common/sd_common_checks.v
+
