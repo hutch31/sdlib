@@ -10,7 +10,6 @@ def find_file(filename):
         for file in files:
             if file == filename:
                 filepath = os.path.join(root, file)
-                print (filepath)
                 return filepath
 
 def create_template(module, cons="c", prod="p"):
@@ -35,18 +34,18 @@ class SymTests(unittest.TestCase):
         os.chdir("common")
         for e, m in enumerate([["sd_input", "c", "ip"], 
                                ["sd_output", "ic", "p"],
-                               ["sd_iohalf", "c", "p"],
-                               ["sd_iofull", "c", "p"]]):
+                               ["sd_iohalf", "c", "p"]]):
             with self.subTest(i=e):
                 create_template(m[0], cons=m[1], prod=m[2])
-                output = subprocess.check_output(["sby", "-f", m[0] + ".sby"])
+                output = subprocess.check_output(["sby", "-f", m[0] + ".sby"], universal_newlines=True)
                 self.assertTrue(output.find("PASS") != -1)
+        os.chdir("..")
 
-    @unittest.skip
     def test_fifo_c(self):
         os.chdir("fifo_c")
-        output = subprocess.check_output(["sby", "-f", "fifo_c.sby"])
+        output = subprocess.check_output(["sby", "-f", "fifo_c.sby"], universal_newlines=True)
         self.assertTrue(output.find("PASS") != -1)
+        os.chdir("..")
 
 if __name__ == '__main__':
     unittest.main()

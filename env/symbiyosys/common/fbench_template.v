@@ -1,3 +1,4 @@
+`define SDLIB_CLOCKING posedge clk
 module fbench_$module
  #(parameter width = 16)
  (
