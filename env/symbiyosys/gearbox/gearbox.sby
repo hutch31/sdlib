@@ -1,0 +1,15 @@
+[options]
+mode prove
+depth 10
+
+[engines]
+smtbmc z3
+
+[script]
+read_verilog -formal ftest_gearbox.v sd_gearbox.v
+prep -top ftest_gearbox
+
+[files]
+ftest_gearbox.v
+../../../rtl/verilog/utility/sd_gearbox.v
+

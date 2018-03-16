@@ -47,5 +47,11 @@ class SymTests(unittest.TestCase):
         self.assertTrue(output.find("PASS") != -1)
         os.chdir("..")
 
+    def test_gearbox(self):
+        os.chdir("gearbox")
+        output = subprocess.check_output(["sby", "-f", "gearbox.sby"], universal_newlines=True)
+        self.assertTrue(output.find("PASS") != -1)
+        os.chdir("..")
+
 if __name__ == '__main__':
     unittest.main()
