@@ -3,6 +3,7 @@ module fbench_$module
  #(parameter width = 16)
  (
   input clk,
+  input reset,
 
   input [width-1:0]   c_data,
   input               c_srdy,
@@ -12,7 +13,7 @@ module fbench_$module
   input               p_drdy
  );
 
-  logic reset = 1;
+  wire reset;
   wire [31:0] in_count, out_count;
 
   initial

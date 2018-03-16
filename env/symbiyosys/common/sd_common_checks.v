@@ -1,5 +1,6 @@
 module sd_common_checks
- #(parameter width = 16)
+ #(parameter width = 16,
+   parameter depth = 4)
  (
   input clk,
   input reset,
@@ -10,9 +11,12 @@ module sd_common_checks
   input  [width-1:0]  p_data,
   input               p_srdy,
   input               p_drdy,
-  output integer      in_count,
-  output integer      out_count
+  output reg [31:0]   in_count,
+  output reg [31:0]   out_count
  );
+
+  reg [width-1:0] history[0:depth-1];
+  wire [$clog2(width)-1:0] selector = $anyconst;
 
   always @(posedge clk)
     begin
@@ -48,6 +52,13 @@ module sd_common_checks
           // if FIFO is empty input tokens should equal output tokens
           if (!p_srdy)
             assert (in_count == out_count);
+
+          // push incoming data into history buffer, check that outgoing
+          // data matches incoming data
+          if (c_srdy & c_drdy)
+            history[in_count[$clog2(depth)-1:0]] <= c_data;
+          if (p_srdy & p_drdy)
+            assert(p_data[selector] == history[out_count[$clog2(depth)-1:0]]); 
         end
     end
 

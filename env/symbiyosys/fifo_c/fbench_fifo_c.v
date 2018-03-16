@@ -4,6 +4,7 @@ module ftest_gearbox
    parameter usz=$clog2(depth+1))
  (
   input clk,
+  input reset,
 
   input [width-1:0]   c_data,
   input               c_srdy,
@@ -14,7 +15,6 @@ module ftest_gearbox
   output  [usz-1:0]   usage
  );
 
-  logic reset = 1;
   wire [31:0] in_count, out_count;
 
   initial
@@ -33,7 +33,7 @@ module ftest_gearbox
      .p_drdy (p_drdy),
      .p_data (p_data));
 
-  sd_common_checks #(.width(width)) common
+  sd_common_checks #(.width(width), .depth(depth)) common
     (.clk    (clk), 
      .reset  (reset),
      .c_srdy (c_srdy),
