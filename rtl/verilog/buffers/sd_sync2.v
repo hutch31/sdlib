@@ -15,6 +15,10 @@
 // synthesis stage.  Alternately this module can be replaced with a
 // technology-specific module which directly instantiates process-specific
 // metastability-hardened flops.
+//
+// When run with AUTO_RANDOM_SYNC_DELAY, each synchronizer randomly 
+// choses a delay value every three cycles, so a variety of sync
+// delays will be used across the simulation.
 //----------------------------------------------------------------------
 // Author: Guy Hutchison
 //
@@ -51,28 +55,38 @@ module sd_sync2
   input clk,
   input [width-1:0] sync_in,
   output [width-1:0] sync_out
- )
+ );
 
 `ifdef SYNTHESIS
   logic [width-1:0] hgff_r1, hgff_r2;
-  always_ff @(posedge clk)
+
+  always @(posedge clk)
     begin
       hgff_r1 <= sync_in;
-      hgff_r2 <= r1;
+      hgff_r2 <= hgff_r1;
     end
+  assign sync_out = hgff_r2;
 `else
   logic [width-1:0] y1, r0, r1, r2;
   logic [width-1:0] DLY = {width{1'b0}};
 
   assign y1 = (~DLY & r0) | (DLY & r1);
-  always_ff @(posedge clk)
+  always @(posedge clk)
     begin
       r0 <= sync_in;
       r1 <= r0;
       r2 <= y1;
     end
-`endif
+  `ifdef AUTO_RANDOM_SYNC_DELAY
+    always
+      begin
+        repeat (3)
+          @(posedge clk);
+        DLY = $random;
+      end
+  `endif
   assign sync_out = r2;
+`endif
 
 endmodule
 
