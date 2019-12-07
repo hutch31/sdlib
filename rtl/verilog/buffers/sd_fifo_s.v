@@ -119,23 +119,16 @@ module sd_fifo_s
   generate
     if (async)
       begin : gen_sync
-        reg [asz:0] hgff_r_sync1, hgff_r_sync2;
-        reg [asz:0] hgff_w_sync1, hgff_w_sync2;
-
-        always @(posedge p_clk)
-          begin
-            hgff_w_sync1 <= `SDLIB_DELAY wrptr_head;
-            hgff_w_sync2 <= `SDLIB_DELAY hgff_w_sync1;
-          end
-
-        always @(posedge c_clk)
-          begin
-            hgff_r_sync1 <= `SDLIB_DELAY rdptr_tail;
-            hgff_r_sync2 <= `SDLIB_DELAY hgff_r_sync1;
-          end
-
-        assign wrptr_head_sync = hgff_w_sync2;
-        assign rdptr_tail_sync = hgff_r_sync2;
+        sd_sync2 #(.width(asz+1)) isync_p
+          (.clk (p_clk),
+           .sync_in (wrptr_head),
+           .sync_out (wrptr_head_sync)
+          );
+        sd_sync2 #(.width(asz+1)) isync_c
+          (.clk (c_clk),
+           .sync_in (rdptr_tail),
+           .sync_out (rdptr_tail_sync)
+          );
       end
     else
       begin : gen_nosync
