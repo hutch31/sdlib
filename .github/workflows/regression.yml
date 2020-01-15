@@ -11,9 +11,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Install Icarus Verilog
       run: sudo apt install iverilog
-    - name: Move to fifo_s
-      run: cd env/verilog/fifo_s
-    - name: Build simulation
-      run: iverilog -g2012 -f fifo_s.vf
-    - name: Run simulation
-      run: ./a.out
+    - name: Build and run fifo_s simulation
+      run: cd env/verilog/fifo_s |
+           iverilog -g2012 -f fifo_s.vf |
+           ./a.out
