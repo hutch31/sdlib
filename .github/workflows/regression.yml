@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install Icarus Verilog
-      run: apt install iverilog
+      run: sudo apt install iverilog
     - name: Move to fifo_s
       run: cd env/verilog/fifo_s
     - name: Build simulation
