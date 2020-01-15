@@ -45,18 +45,20 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 //
-// For more information, please refer to <http://unlicense.org/> 
+// For more information, please refer to <http://unlicense.org/>
 //----------------------------------------------------------------------
 
 // Clocking statement for synchronous blocks.  Default is for
 // posedge clocking and positive async reset
-`ifndef SDLIB_CLOCKING 
+`ifdef SDLIB_ASYNC_RESET
  `define SDLIB_CLOCKING posedge clk or posedge reset
+`else
+ `define SDLIB_CLOCKING posedge clk
 `endif
 
 // delay unit for nonblocking assigns, default is to #1
-`ifndef SDLIB_DELAY 
- `define SDLIB_DELAY #1 
+`ifndef SDLIB_DELAY
+ `define SDLIB_DELAY #1
 `endif
 
 
@@ -82,7 +84,7 @@ module sd_fifo_tail_b
      input                mem_we,
 
      output reg [usz-1:0] p_usage,
-     
+
      output               p_srdy,
      input                p_drdy,
      input                p_commit,
@@ -114,14 +116,14 @@ module sd_fifo_tail_b
   //   4) valid_a && valid_b && trdy
   always @*
     begin
-      
+
       if (cur_rdptr[asz-1:0] == (bound_high))
 	begin
 	  cur_rdptr_p1[asz-1:0] = bound_low;
 	end
       else
         cur_rdptr_p1 = cur_rdptr + 1;
-      
+
       empty = (wrptr == cur_rdptr);
 
       if (commit && p_abort)
@@ -145,14 +147,14 @@ module sd_fifo_tail_b
       if (~tmp_usage[usz])
         p_usage = tmp_usage[usz-1:0];
       else
-        p_usage = fifo_size - (cur_rdptr[asz-1:0] - wrptr[asz-1:0]);  
+        p_usage = fifo_size - (cur_rdptr[asz-1:0] - wrptr[asz-1:0]);
     end // always @ *
 
-  always @(posedge clk)
+  always @(`SDLIB_CLOCKING)
     begin
       if (reset)
 	cur_rdptr <= `SDLIB_DELAY bound_low;
-      else 
+      else
 	cur_rdptr <= `SDLIB_DELAY nxt_cur_rdptr;
     end
 
@@ -162,7 +164,7 @@ module sd_fifo_tail_b
     if (commit == 1)
       begin : gen_s0
 
-	always @(posedge clk)
+	always @(`SDLIB_CLOCKING)
 	  begin
 	    if (reset)
 	      com_rdptr <= `SDLIB_DELAY bound_low;
@@ -187,7 +189,7 @@ module sd_fifo_tail_b
         begin
           prev_re <= `SDLIB_DELAY 0;
 	end
-      else 
+      else
         begin
 	  if (commit && p_abort)
 	    prev_re <= `SDLIB_DELAY 0;
@@ -203,15 +205,15 @@ module sd_fifo_tail_b
 
 	sd_input #(asz+width) rbuf1
 	  (.clk (clk), .reset (p_abort | reset),
-	   .c_srdy (prev_re), 
+	   .c_srdy (prev_re),
 	   .c_drdy (rbuf1_drdy),
 	   .c_data ({rdaddr_s0,mem_rd_data}),
 	   .ip_srdy (ip_srdy), .ip_drdy (ip_drdy),
 	   .ip_data ({ip_rdaddr,ip_data}));
-	
+
 	sd_output #(asz+width) rbuf2
 	  (.clk (clk), .reset (p_abort | reset),
-	   .ic_srdy (ip_srdy), 
+	   .ic_srdy (ip_srdy),
 	   .ic_drdy (ip_drdy),
 	   .ic_data ({ip_rdaddr,ip_data}),
 	   .p_srdy (p_srdy), .p_drdy (p_drdy),
@@ -229,15 +231,15 @@ module sd_fifo_tail_b
       begin : gen_ns2
 	sd_input #(width) rbuf1
 	  (.clk (clk), .reset (p_abort | reset),
-	   .c_srdy (prev_re), 
+	   .c_srdy (prev_re),
 	   .c_drdy (rbuf1_drdy),
 	   .c_data (mem_rd_data),
 	   .ip_srdy (ip_srdy), .ip_drdy (ip_drdy),
 	   .ip_data (ip_data));
-	
+
 	sd_output #(width) rbuf2
 	  (.clk (clk), .reset (p_abort | reset),
-	   .ic_srdy (ip_srdy), 
+	   .ic_srdy (ip_srdy),
 	   .ic_drdy (ip_drdy),
 	   .ic_data (ip_data),
 	   .p_srdy (p_srdy), .p_drdy (p_drdy),

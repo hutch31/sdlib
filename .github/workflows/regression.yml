@@ -17,3 +17,5 @@ jobs:
       run: python3 scripts/run_test.py --test fifo_c
     - name: Build and run rrmux simulation
       run: python3 scripts/run_test.py --test rrmux
+    - name: Build and run fifo_b simulation
+      run: python3 scripts/run_test.py --test fifo_b

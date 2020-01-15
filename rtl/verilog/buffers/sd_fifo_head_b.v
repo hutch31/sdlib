@@ -42,12 +42,17 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 //
-// For more information, please refer to <http://unlicense.org/> 
+// For more information, please refer to <http://unlicense.org/>
 //----------------------------------------------------------------------
+`ifdef SDLIB_ASYNC_RESET
+ `define SDLIB_CLOCKING posedge clk or posedge reset
+`else
+ `define SDLIB_CLOCKING posedge clk
+`endif
 
 // delay unit for nonblocking assigns, default is to #1
-`ifndef SDLIB_DELAY 
- `define SDLIB_DELAY #1 
+`ifndef SDLIB_DELAY
+ `define SDLIB_DELAY #1
 `endif
 
 module sd_fifo_head_b
@@ -74,7 +79,7 @@ module sd_fifo_head_b
    output reg [usz-1:0] c_usage,
    output reg         mem_we
    );
-  
+
   reg [asz-1:0]       nxt_wrptr;
   reg [asz-1:0]       wrptr_p1;
   reg 			empty;
@@ -86,7 +91,7 @@ module sd_fifo_head_b
   assign fifo_size = bound_high - bound_low + 1;
 
   assign 		c_drdy = !nxt_full & enable;
-  
+
   always @*
     begin
       if (cur_wrptr[asz-1:0] == bound_high)
@@ -95,7 +100,7 @@ module sd_fifo_head_b
 	end
       else
         wrptr_p1 = cur_wrptr + 1;
-      
+
       //empty = (cur_wrptr == rdptr) & !full;
       empty = (cur_wrptr == rdptr);
 
@@ -128,10 +133,10 @@ module sd_fifo_head_b
       if (~tmp_usage[usz])
         c_usage = tmp_usage[usz-1:0];
       else
-        c_usage = fifo_size - (rdptr[asz-1:0] - cur_wrptr[asz-1:0]);  
+        c_usage = fifo_size - (rdptr[asz-1:0] - cur_wrptr[asz-1:0]);
     end
 
-  always @(posedge clk)
+  always @(`SDLIB_CLOCKING)
     begin
       if (reset)
 	begin
@@ -145,7 +150,7 @@ module sd_fifo_head_b
 	end // else: !if(reset)
     end // always @ (posedge clk)
 
-  generate 
+  generate
     if (commit)
       begin
 	always @*
@@ -155,8 +160,8 @@ module sd_fifo_head_b
             else
               nxt_com_wrptr = com_wrptr;
 	  end
-    
-	always @(posedge clk)
+
+	always @(`SDLIB_CLOCKING)
 	  begin
             if (reset)
               com_wrptr <= `SDLIB_DELAY bound_low;
@@ -172,4 +177,3 @@ module sd_fifo_head_b
   endgenerate
 
 endmodule // fifo_head
-

@@ -25,13 +25,15 @@
 `define SD_FIFO_BUFTAIL_S_V
 // Clocking statement for synchronous blocks.  Default is for
 // posedge clocking and positive async reset
-`ifndef SDLIB_CLOCKING 
+`ifdef SDLIB_ASYNC_RESET
  `define SDLIB_CLOCKING posedge clk or posedge reset
+`else
+ `define SDLIB_CLOCKING posedge clk
 `endif
 
-// delay unit for nonblocking assigns, default is to #1 
-`ifndef SDLIB_DELAY 
- `define SDLIB_DELAY #1  
+// delay unit for nonblocking assigns, default is to #1
+`ifndef SDLIB_DELAY
+ `define SDLIB_DELAY #1
 `endif
 
 module sd_fifo_buftail_s
@@ -57,7 +59,7 @@ module sd_fifo_buftail_s
      output reg             p_srdy,
      input                  p_drdy,
      output reg [width-1:0] p_data,
-     
+
      output reg [asz:0]     p_usage
      );
 
@@ -71,7 +73,7 @@ module sd_fifo_buftail_s
 
   logic [asz:0]                 wrptr_head_dly;
   logic [$clog2(bufsize+1)-1:0] dyn_usage;
-  
+
   function [$clog2(bufsize+1)-1:0] tot_usage;
     input [rd_lat-1:0]          d_rd_en;
     input [$clog2(bufsize+1)-1:0] pfusage;
@@ -84,7 +86,7 @@ module sd_fifo_buftail_s
 
   assign dyn_usage = tot_usage(d_rd_en,pfusage);
   assign clken = 1'b1;
-  
+
   sd_fifo_tail_s #(/*AUTOINSTPARAM*/
                    // Parameters
                    .depth               (depth),
@@ -146,7 +148,7 @@ module sd_fifo_buftail_s
     //if (!((pfusage > 0) && p_drdy) && (d_rd_en[rd_lat-1]))
     if (d_rd_en[rd_lat-1])
       prefetch[pf_tptr] <= rd_data;
-  
+
   always @(`SDLIB_CLOCKING)
     begin
       if (reset)
@@ -167,6 +169,6 @@ module sd_fifo_buftail_s
 
   assign p_srdy = (pfusage > 0);
   assign p_data = prefetch[pf_hptr];
-  
+
 endmodule // sd_fifo_head_s
 `endif // SD_FIFO_BUFTAIL_S_V

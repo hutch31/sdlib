@@ -3,7 +3,7 @@
 //
 // This module is functionally equivalent to sd_iofull_legacy
 // But this verison does not use srdy/drdy signals for clock gating directly
-//     intead, srdy/drdy fan-out to a few internal state signals, which then 
+//     intead, srdy/drdy fan-out to a few internal state signals, which then
 //     dictate loading and poping of an internal 2-entry buffer.
 // p_srdy and c_drdy comes directly from flop
 // c_drdy and p_drdy are lightly loaded to the interal control flops
@@ -33,20 +33,22 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 //
-// For more information, please refer to <http://unlicense.org/> 
+// For more information, please refer to <http://unlicense.org/>
 //----------------------------------------------------------------------
 
 `ifndef _SD_IOFULL_V_
     `define _SD_IOFULL_V_
 // Clocking statement for synchronous blocks.  Default is for
 // posedge clocking and positive async reset
-`ifndef SDLIB_CLOCKING 
+`ifdef SDLIB_ASYNC_RESET
+ `define SDLIB_CLOCKING posedge clk or posedge reset
+`else
  `define SDLIB_CLOCKING posedge clk
 `endif
 
 // delay unit for nonblocking assigns, default is to #1
-`ifndef SDLIB_DELAY 
- `define SDLIB_DELAY #1 
+`ifndef SDLIB_DELAY
+ `define SDLIB_DELAY #1
 `endif
 
 module sd_iofull #(
@@ -129,7 +131,7 @@ always @(`SDLIB_CLOCKING) begin
     else
         state  <= nxt_state;
 end
- 
+
 // holding data control
 always @(*) begin
     nxt_shift = 1'b0;
@@ -221,7 +223,7 @@ always @(*) begin
     for(int g=0;g<ctrl_rep-1;g=g+1) begin
         p_data[g*lfo +: lfo] = send_sel[g] ? hold_1[g*lfo +: lfo] : hold_0[g*lfo +: lfo];
     end
-    p_data[(ctrl_rep-1)*lfo +: hfo] = send_sel[ctrl_rep-1] ? hold_1[(ctrl_rep-1)*lfo +: hfo] : 
+    p_data[(ctrl_rep-1)*lfo +: hfo] = send_sel[ctrl_rep-1] ? hold_1[(ctrl_rep-1)*lfo +: hfo] :
                                                              hold_0[(ctrl_rep-1)*lfo +: hfo] ;
 end
 endmodule

@@ -39,18 +39,20 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 //
-// For more information, please refer to <http://unlicense.org/> 
+// For more information, please refer to <http://unlicense.org/>
 //----------------------------------------------------------------------
 
 // Clocking statement for synchronous blocks.  Default is for
 // posedge clocking and positive async reset
-`ifndef SDLIB_CLOCKING 
+`ifdef SDLIB_ASYNC_RESET
  `define SDLIB_CLOCKING posedge clk or posedge reset
+`else
+ `define SDLIB_CLOCKING posedge clk
 `endif
 
 // delay unit for nonblocking assigns, default is to #1
-`ifndef SDLIB_DELAY 
- `define SDLIB_DELAY #1 
+`ifndef SDLIB_DELAY
+ `define SDLIB_DELAY #1
 `endif
 
 module sd_fifo_head_s
@@ -80,14 +82,14 @@ module sd_fifo_head_s
 
   assign c_drdy = !full;
   assign wr_addr = wrptr[asz-1:0];
-  
+
   always @*
     begin
       wrptr_p1 = wrptr + 1;
-      
-      full = ((wrptr[asz-1:0] == rdptr[asz-1:0]) && 
+
+      full = ((wrptr[asz-1:0] == rdptr[asz-1:0]) &&
               (wrptr[asz] == ~rdptr[asz]));
-          
+
       if (c_srdy & !full)
         nxt_wrptr = wrptr_p1;
       else
@@ -102,7 +104,7 @@ module sd_fifo_head_s
     end
 
   generate if (async == 0)
-    begin : sync_wptr                     
+    begin : sync_wptr
       always @(`SDLIB_CLOCKING)
         begin
           if (reset)
@@ -150,5 +152,5 @@ module sd_fifo_head_s
   endfunction
 
   assign rdptr = (async)? grey2bin(rdptr_tail) : rdptr_tail;
-  
+
 endmodule

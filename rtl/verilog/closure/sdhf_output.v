@@ -34,19 +34,8 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 //
-// For more information, please refer to <http://unlicense.org/> 
+// For more information, please refer to <http://unlicense.org/>
 //----------------------------------------------------------------------
-
-// Clocking statement for synchronous blocks.  Default is for
-// posedge clocking and positive async reset
-`ifndef SDLIB_CLOCKING 
- `define SDLIB_CLOCKING posedge clk or posedge reset
-`endif
-
-// delay unit for nonblocking assigns, default is to #1
-`ifndef SDLIB_DELAY 
- `define SDLIB_DELAY #1 
-`endif
 
 module sdhf_output
   #(parameter width = 256,
@@ -101,4 +90,4 @@ module sdhf_output
   endgenerate
 
 endmodule // sdhf_output
-//   
+//

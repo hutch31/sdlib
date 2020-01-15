@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------
 // Author: Frank Wang
-// 
+//
 // Variant of sd_fifo_c, always write to last location and then shift
 // This module is intended to be used at the primary input port in registered in/out design flow.
 //
@@ -11,6 +11,13 @@
 //----------------------------------------------------------------------
 `ifndef _SD_FIFO_TAILWR_V_
 `define _SD_FIFO_TAILWR_V_
+
+`ifdef SDLIB_ASYNC_RESET
+ `define SDLIB_CLOCKING posedge clk or posedge reset
+`else
+ `define SDLIB_CLOCKING posedge clk
+`endif
+
 module sd_fifo_tailwr #(
     parameter width=8,
     parameter rst_sz=0, //upper bits of data to reset if reset is asserted
@@ -52,7 +59,7 @@ logic [asz-1:0] nxt_buf_rd_ptr;
 
 assign rd_vld = p_srdy && p_drdy;
 assign wr_vld = c_srdy && c_drdy;
-  
+
 assign c_drdy = (usage < depth);
 //always @(posedge clk) begin
 //    if (reset)                          c_drdy <= 1'b0;
@@ -88,7 +95,7 @@ assign nxt_complete_usage  = usage         + wr_vld   - rd_vld;
 assign nxt_partial_usage   = partial_usage + wr_vld_d - rd_vld;
 assign usage = wr_vld_d + partial_usage;
 assign nxt_usage = nxt_complete_usage;
-always @(posedge clk) begin
+always @(`SDLIB_CLOCKING) begin
     if(reset) begin
         wr_vld_d <= 1'b0;
         partial_usage    <= {usz{1'b0}};
@@ -116,7 +123,7 @@ end
 
 `ifdef SD_INLINE_ASSERTION_ON
 logic [usz-1:0]   complete_usage;
-always @(posedge clk) begin
+always @(`SDLIB_CLOCKING) begin
     if(reset) begin
         complete_usage   <= {usz{1'b0}};
     end else begin
@@ -130,26 +137,25 @@ logic chk_usage;
 assign fifo_full = (usage >= depth);
 assign chk_usage = (complete_usage == usage);
 
-COVER_FIFO_FULL: cover property 
+COVER_FIFO_FULL: cover property
         (@(posedge clk) disable iff (reset) fifo_full);
-ERROR_FIFO_USAGE: assert property 
+ERROR_FIFO_USAGE: assert property
         (@(posedge clk) disable iff (reset) (complete_usage == usage));
 
 logic [asz-1:0] rd_ptr_idx;
-always @(posedge clk) begin
+always @(`SDLIB_CLOCKING) begin
     if(reset) begin
 	rd_ptr_idx <= {asz{1'b0}};
-    end else begin        
+    end else begin
 	rd_ptr_idx <= nxt_buf_rd_ptr;
     end
 end
 
 ERROR_PTR_OUT_RANGE:assert property
 	(@(posedge clk) disable iff (reset) (rd_ptr_idx < depth));
-`endif 
-  
+`endif
+
 endmodule // sd_fifo_tailwr
 // Local Variables:
 // End:
 `endif //  _SD_FIFO_TAILWR_V_
-

@@ -37,22 +37,24 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 //
-// For more information, please refer to <http://unlicense.org/> 
+// For more information, please refer to <http://unlicense.org/>
 //----------------------------------------------------------------------
 
 // Clocking statement for synchronous blocks.  Default is for
 // posedge clocking and positive async reset
-`ifndef SDLIB_CLOCKING 
+`ifdef SDLIB_ASYNC_RESET
  `define SDLIB_CLOCKING posedge clk or posedge reset
+`else
+ `define SDLIB_CLOCKING posedge clk
 `endif
 
 // delay unit for nonblocking assigns, default is to #1
-`ifndef SDLIB_DELAY 
- `define SDLIB_DELAY #1 
+`ifndef SDLIB_DELAY
+ `define SDLIB_DELAY #1
 `endif
 
 module sd_fifo_c
-  #(parameter width=8, 
+  #(parameter width=8,
     parameter depth=16,
     parameter usz=$clog2(depth+1)
     )
@@ -82,10 +84,10 @@ module sd_fifo_c
   logic                     wr_en, rd_en;
   logic                     nxt_p_srdy;
   logic [asz-1:0]           r_addr; // cn_lint_off_line CN_UNUSED_REG
-  
+
   assign c_drdy = !full;
   //assign wr_addr = wrptr[asz-1:0];
-   
+
   always @*
     begin
       if (npt)
@@ -97,9 +99,9 @@ module sd_fifo_c
         end
       else
         wrptr_p1 = wrptr + 1;
-      
+
       full = (usage == (depth));
-          
+
       if (c_srdy & !full)
         nxt_wrptr = wrptr_p1;
       else
@@ -119,14 +121,14 @@ module sd_fifo_c
         end
       else
         rdptr_p1 = rdptr + 1;
-      
+
       //empty = (usage == 0);
 
       if (p_drdy & p_srdy)
         nxt_rdptr = rdptr_p1;
       else
         nxt_rdptr = rdptr;
-          
+
       nxt_p_srdy = (p_srdy & ~p_drdy) | (~p_srdy & (usage > 0)) | (p_srdy & p_drdy & (usage > 1));
       rd_en = (p_srdy & p_drdy);
     end // always @ *
@@ -140,7 +142,7 @@ module sd_fifo_c
       else
         nxt_usage = usage;
     end
-      
+
   always @(`SDLIB_CLOCKING)
     begin
       if (reset)
@@ -183,5 +185,5 @@ module sd_fifo_c
    .wr_addr (wrptr),
    .rd_addr (rdptr),
    .d_out   (p_data));
-  
+
 endmodule

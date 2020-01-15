@@ -38,18 +38,20 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 //
-// For more information, please refer to <http://unlicense.org/> 
+// For more information, please refer to <http://unlicense.org/>
 //----------------------------------------------------------------------
 
 // Clocking statement for synchronous blocks.  Default is for
 // posedge clocking and positive async reset
-`ifndef SDLIB_CLOCKING 
+`ifdef SDLIB_ASYNC_RESET
  `define SDLIB_CLOCKING posedge clk or posedge reset
+`else
+ `define SDLIB_CLOCKING posedge clk
 `endif
 
 // delay unit for nonblocking assigns, default is to #1
-`ifndef SDLIB_DELAY 
- `define SDLIB_DELAY #1 
+`ifndef SDLIB_DELAY
+ `define SDLIB_DELAY #1
 `endif
 
 module sd_fifo_tail_s
@@ -70,7 +72,7 @@ module sd_fifo_tail_s
 
      output reg         p_srdy,
      input              p_drdy,
-     
+
      output reg [asz:0] p_usage
      );
 
@@ -85,21 +87,21 @@ module sd_fifo_tail_s
   always @*
     begin
       rdptr_p1 = rdptr + 1;
-      
+
       if (p_drdy & p_srdy)
         nxt_rdptr = rdptr_p1;
       else
         nxt_rdptr = rdptr;
-          
+
       nxt_p_srdy = (wrptr != nxt_rdptr);
       rd_en = clken & nxt_p_srdy & ~(p_srdy & ~p_drdy);
-      
+
       if (wrptr[asz] == rdptr[asz])
         p_usage = wrptr - rdptr;
       else
         p_usage = (wrptr[asz-1:0] + depth) - rdptr[asz-1:0]; // cn_lint_off_line CN_UNEQUAL_LEN
     end
-      
+
   always @(`SDLIB_CLOCKING)
     begin
       if (reset)
@@ -113,7 +115,7 @@ module sd_fifo_tail_s
     end // always @ (posedge clk)
 
   generate if (async == 0)
-    begin : sync_rptr                     
+    begin : sync_rptr
       always @(`SDLIB_CLOCKING)
         begin
           if (reset)
@@ -162,5 +164,5 @@ module sd_fifo_tail_s
 
   //assign rdptr_tail = (async) ? bin2grey(rdptr) : rdptr;
   assign wrptr = (async)? grey2bin(wrptr_head) : wrptr_head;
-  
+
 endmodule // sd_fifo_head_s
