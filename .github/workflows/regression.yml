@@ -1,0 +1,17 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Icarus Verilog
+      run: sudo apt install iverilog
+    - name: Build and run fifo_s simulation
+      run: cd env/verilog/fifo_s |
+           iverilog -g2012 -f fifo_s.vf |
+           ./a.out
