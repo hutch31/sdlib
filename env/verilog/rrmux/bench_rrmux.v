@@ -253,7 +253,6 @@ module bench_rrmux;
        .c_data                          (out_data[7:0]));         // Templated
 
   reg        fail;
-  integer    i;
   
   initial
     begin
@@ -305,9 +304,9 @@ module bench_rrmux;
        do_reset();
        test1();
        if(fail)
-	 $display("!!!!! TEST 1 FAILED !!!!!!");
+	 $display("!!!!! TEST FAILED !!!!!!");
        else
-	 $display("----- TEST 1 PASED -----");
+	 $display("----- TEST PASSED -----");
   
        $finish;
     end // initial begin

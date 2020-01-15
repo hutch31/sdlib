@@ -20,6 +20,8 @@ with open("test.log", "r") as fh:
             passed = True
 
 if passed:
+    print("{} passed".format(args.test))
     sys.exit(0)
 else:
+    print("{} failed".format(args.test))
     sys.exit(1)
