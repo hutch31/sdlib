@@ -12,4 +12,4 @@ jobs:
     - name: Install Icarus Verilog
       run: sudo apt install iverilog
     - name: Build and run fifo_s simulation
-      run: scripts/run_test.py --test fifo_s
+      run: python3 scripts/run_test.py --test fifo_s
