@@ -19,3 +19,5 @@ jobs:
       run: python3 scripts/run_test.py --test rrmux
     - name: Build and run fifo_b simulation
       run: python3 scripts/run_test.py --test fifo_b
+    - name: Build and run test for timing closure components
+      run: python3 scripts/run_test.py --test closure

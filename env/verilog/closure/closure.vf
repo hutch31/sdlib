@@ -1,0 +1,6 @@
+bench_closure.v
+sd_pipeline.v
++libext+.v
+-y ../common
+-y ../../../rtl/verilog/closure
+
