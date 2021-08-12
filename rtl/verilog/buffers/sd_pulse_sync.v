@@ -18,6 +18,7 @@ module sd_pulse_sync
    );
 
   reg     r_pulse_in;
+  wire    ack_in;
 
   always @(posedge clk_in)
     begin
